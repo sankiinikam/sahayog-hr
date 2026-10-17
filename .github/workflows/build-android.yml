@@ -14,11 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -54,11 +54,18 @@ jobs:
           ./gradlew assembleDebug --no-daemon --stacktrace > gradle.log 2>&1 || {
             echo "## ❌ Gradle Build Failed" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 60 gradle.log >> $GITHUB_STEP_SUMMARY
+            tail -n 80 gradle.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat gradle.log
             exit 1
           }
+
+      - name: Upload Gradle Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: desktop/android/gradle.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
