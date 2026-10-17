@@ -5,6 +5,9 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     name: Build Android Debug APK
@@ -52,20 +55,20 @@ jobs:
         working-directory: desktop/android
         run: |
           ./gradlew assembleDebug --no-daemon --stacktrace > gradle.log 2>&1 || {
-            echo "## ❌ Gradle Build Failed" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 gradle.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat gradle.log
+            cat gradle.log | tail -n 80
             exit 1
           }
 
-      - name: Upload Gradle Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: desktop/android/gradle.log
+      - name: Save Log to Branch on Failure
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B debug-logs
+          cp desktop/android/gradle.log ./latest-gradle-failure.txt
+          git add latest-gradle-failure.txt
+          git commit -m "chore: save latest gradle failure log"
+          git push origin debug-logs -f
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
