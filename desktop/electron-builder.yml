@@ -3,7 +3,6 @@ productName: Sahayog HR
 copyright: Copyright © 2026 Sahayog HR Inc.
 directories:
   output: release
-electronDist: node_modules/electron/dist
 files:
   - "dist/**/*"
   - "electron/**/*"
