@@ -1,0 +1,40 @@
+name: Build Desktop App
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows Setup Installer (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build Web App
+        working-directory: desktop
+        run: npm run build
+
+      - name: Package Windows Installer
+        working-directory: desktop
+        run: npx electron-builder --win nsis
+
+      - name: Upload Windows Installer (.exe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sahayog-HR-Windows-Setup-EXE
+          path: desktop/release/*.exe
