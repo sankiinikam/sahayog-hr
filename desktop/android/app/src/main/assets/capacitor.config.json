@@ -1,0 +1,9 @@
+{
+	"appId": "com.sahayog.hr",
+	"appName": "Sahayog HR",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https",
+		"cleartext": true
+	}
+}
