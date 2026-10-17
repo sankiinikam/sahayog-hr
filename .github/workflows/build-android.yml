@@ -32,6 +32,9 @@ jobs:
           sed -i 's/\r$//' desktop/android/gradlew
           chmod +x desktop/android/gradlew
 
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+
       - name: Install Desktop Dependencies
         working-directory: desktop
         run: npm ci
@@ -47,17 +50,11 @@ jobs:
 
       - name: Build Android Debug APK
         working-directory: desktop/android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
-
-      - name: Upload Build Log if Failed
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: desktop/android/build.log
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sahayog-HR-Debug-APK
-          path: desktop/android/app/build/outputs/apk/debug/app-debug.apk
+          path: desktop/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
