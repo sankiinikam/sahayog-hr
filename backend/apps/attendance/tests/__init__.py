@@ -1,0 +1,2 @@
+# attendance tests package
+

@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv/
+backend/.venv/
+backend/.env
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Django
+backend/media/
+backend/staticfiles/
+backend/static_collected/
+*.log
+local_settings.py
+db.sqlite3
+
+# Node / Desktop
+desktop/node_modules/
+desktop/dist/
+desktop/out/
+desktop/release/
+desktop/.env
+
+# Flutter / Mobile
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/.env
+
+# Environment files (NEVER commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+nosetests.xml
+coverage/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+
+# Documentation build
+docs/_build/
+site/
+
+# Temporary
+*.tmp
+*.bak
+*.orig
+tmp/
+temp/
+
+# Android Build Caches & Outputs
+desktop/android/.gradle/
+desktop/android/build/
+desktop/android/app/build/
+desktop/android/local.properties
+desktop/android/.idea/
+desktop/android/*.iml
+desktop/android/app/*.iml
+

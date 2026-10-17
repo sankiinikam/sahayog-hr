@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: HRMS API
+  version: 1.0.0
+  description: Human Resource Management System REST API
+paths:
+  /api/v1/audit/:
+    get:
+      operationId: api_v1_audit_list
+      description: |-
+        GET /api/v1/audit/
+        Returns paginated audit log. Admin and HR Manager access only.
+        Sensitive field values (old_values, new_values) are excluded from
+        this listing endpoint to prevent bulk data exposure.
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: content_type
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/v1/auth/change-password/:
+    post:
+      operationId: api_v1_auth_change_password_create
+      description: |-
+        POST /api/v1/auth/change-password/
+        Allows authenticated users to change their own password.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/login/:
+    post:
+      operationId: api_v1_auth_login_create
+      description: |-
+        POST /api/v1/auth/login/
+        Returns access + refresh JWT tokens along with basic user info.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPairRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/logout/:
+    post:
+      operationId: api_v1_auth_logout_create
+      description: |-
+        POST /api/v1/auth/logout/
+        Blacklists the provided refresh token and marks device session inactive.
+        Body: { "refresh": "<refresh_token>" }
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: api_v1_auth_me_retrieve
+      description: |-
+        GET /api/v1/auth/me/
+        Returns the currently authenticated user's profile.
+        Never returns password or sensitive auth fields.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/password-reset/:
+    post:
+      operationId: api_v1_auth_password_reset_create
+      description: |-
+        POST /api/v1/auth/password-reset/
+        Sends a password reset email.
+        Always returns 200 to prevent account enumeration.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/password-reset/confirm/:
+    post:
+      operationId: api_v1_auth_password_reset_confirm_create
+      description: |-
+        POST /api/v1/auth/password-reset/confirm/
+        Completes password reset using the emailed token.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: api_v1_auth_refresh_create
+      description: |-
+        POST /api/v1/auth/refresh/
+        Refreshes the access token using a valid refresh token.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/sessions/:
+    get:
+      operationId: api_v1_auth_sessions_retrieve
+      description: |-
+        GET /api/v1/auth/sessions/
+        Returns the active device sessions for the authenticated user.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/users/:
+    get:
+      operationId: api_v1_auth_users_retrieve
+      description: |-
+        GET  /api/v1/auth/users/   — Admin: list all users
+        POST /api/v1/auth/users/   — Admin: create a new user
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: api_v1_auth_users_create
+      description: |-
+        GET  /api/v1/auth/users/   — Admin: list all users
+        POST /api/v1/auth/users/   — Admin: create a new user
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/users/{id}/:
+    get:
+      operationId: api_v1_auth_users_retrieve_2
+      description: |-
+        GET   /api/v1/auth/users/{id}/  — Admin: get user
+        PATCH /api/v1/auth/users/{id}/  — Admin: update user role or active status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: api_v1_auth_users_partial_update
+      description: |-
+        GET   /api/v1/auth/users/{id}/  — Admin: get user
+        PATCH /api/v1/auth/users/{id}/  — Admin: update user role or active status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/health/:
+    get:
+      operationId: api_v1_health_retrieve
+      description: |-
+        GET /api/v1/health/
+        Returns system health status. Does not expose sensitive information.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        target_email:
+          type: string
+          format: email
+          readOnly: true
+        action:
+          type: string
+          maxLength: 100
+        content_type:
+          type: string
+          maxLength: 100
+        object_id:
+          type: integer
+          nullable: true
+        object_repr:
+          type: string
+          maxLength: 500
+        ip_address:
+          type: string
+          nullable: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - created_at
+      - id
+      - target_email
+      - user_email
+    CustomTokenObtainPairRequest:
+      type: object
+      description: |-
+        Extends simplejwt token serializer to:
+        - Use email as the username field
+        - Include user role and name in the response
+        - Record device session
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

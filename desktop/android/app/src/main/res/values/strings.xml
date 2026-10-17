@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sahayog HR</string>
+    <string name="title_activity_main">Sahayog HR</string>
+    <string name="package_name">com.sahayog.hr</string>
+    <string name="custom_url_scheme">com.sahayog.hr</string>
+</resources>

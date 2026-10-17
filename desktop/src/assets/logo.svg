@@ -1,0 +1,26 @@
+<svg width="128" height="128" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="saffronGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="50%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="indigoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2" />
+  <path d="M26 44C26 30.7452 36.7452 20 50 20C63.2548 20 74 30.7452 74 44C74 48 70 51 65 51C60 51 57 47 54 44C51 41 46 38 41 41C36 44 34 50 26 44Z" fill="url(#saffronGrad)" />
+  <path d="M74 56C74 69.2548 63.2548 80 50 80C36.7452 80 26 69.2548 26 56C26 52 30 49 35 49C40 49 43 53 46 56C49 59 54 62 59 59C64 56 66 50 74 56Z" fill="url(#indigoGrad)" />
+  <circle cx="50" cy="50" r="8.5" fill="url(#goldGlow)" />
+  <circle cx="50" cy="50" r="5" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="34" cy="30" r="4.5" fill="url(#saffronGrad)" />
+  <circle cx="66" cy="70" r="4.5" fill="url(#indigoGrad)" />
+</svg>
+
