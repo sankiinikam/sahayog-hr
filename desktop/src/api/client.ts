@@ -1,4 +1,7 @@
 import axios from "axios";
+import { isOfflineMode, setOfflineMode, handleOfflineRequest } from "./offlineStore";
+
+export { isOfflineMode, setOfflineMode };
 
 export const getApiBaseUrl = (): string => {
   return localStorage.getItem("hrms_api_url") || (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
@@ -18,6 +21,37 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Standalone Offline Mode Adapter
+const httpAdapter = axios.getAdapter(axios.defaults.adapter || ["xhr", "http", "fetch"]);
+
+apiClient.defaults.adapter = async (config) => {
+  if (isOfflineMode()) {
+    const url = config.url || "";
+    const method = config.method || "get";
+    let body = config.data;
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // Keep string
+      }
+    }
+    const result = handleOfflineRequest(url, method, body);
+    if (result) {
+      return {
+        data: result.data,
+        status: result.status,
+        statusText: result.status >= 200 && result.status < 300 ? "OK" : "Error",
+        headers: {},
+        config,
+        request: {},
+      };
+    }
+  }
+
+  return httpAdapter(config);
+};
 
 apiClient.interceptors.request.use(
   (config) => {

@@ -6,6 +6,7 @@ import { AdminEmployeeProfile } from "./components/AdminEmployeeProfile";
 import { CompanyProfile } from "./components/CompanyProfile";
 import { Users, Building2, LogOut, Bell, Settings } from "lucide-react";
 import { SahayogLogo } from "./components/SahayogLogo";
+import { isOfflineMode, setOfflineMode } from "./api/client";
 import "./App.css";
 
 export const App: React.FC = () => {
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user_info");
+    setOfflineMode(false);
     setUser(null);
     setSelectedEmployee(null);
   };
@@ -99,6 +101,12 @@ export const App: React.FC = () => {
             )}
           </div>
           <div className="top-actions">
+            {isOfflineMode() && (
+              <span className="offline-badge-pill" title="Running in Standalone Offline Mode using device storage">
+                <span className="dot dot-active" />
+                Standalone Mode
+              </span>
+            )}
             <button className="icon-btn" title="Notifications">
               <Bell size={18} />
             </button>

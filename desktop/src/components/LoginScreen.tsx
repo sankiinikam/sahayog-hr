@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { apiClient, getApiBaseUrl, setApiBaseUrl } from "../api/client";
-import { Lock, Mail, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { apiClient, getApiBaseUrl, setApiBaseUrl, setOfflineMode } from "../api/client";
+import { Lock, Mail, AlertCircle, ArrowRight, Loader2, Smartphone, Sparkles, Wifi } from "lucide-react";
 import { SahayogLogo } from "./SahayogLogo";
 
 interface LoginProps {
@@ -13,6 +13,23 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [apiBaseUrl, setApiBaseUrlState] = useState(getApiBaseUrl);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleStartOfflineMode = () => {
+    setOfflineMode(true);
+    const demoUser = {
+      id: 1,
+      email: "admin@sahayog.local",
+      first_name: "Admin",
+      last_name: "User",
+      role: "ADMIN",
+      is_staff: true,
+      is_superuser: true,
+    };
+    localStorage.setItem("access_token", "offline-demo-access-token");
+    localStorage.setItem("refresh_token", "offline-demo-refresh-token");
+    localStorage.setItem("user_info", JSON.stringify(demoUser));
+    onLoginSuccess(demoUser);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +46,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
+      setOfflineMode(false);
       const response = await apiClient.post("/auth/login/", { email, password });
       const { access, refresh, user } = response.data;
       localStorage.setItem("access_token", access);
@@ -39,7 +57,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else {
-        setError("Unable to connect to authentication service. Please check backend.");
+        setError("Unable to connect to HRMS server at " + apiBaseUrl + ". Check your Wi‑Fi or switch to Standalone Mode.");
       }
     } finally {
       setLoading(false);
@@ -57,16 +75,48 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <div className="login-header">
           <SahayogLogo size="lg" variant="full" showSubtitle={true} />
           <p className="login-subtitle">
-            Enterprise HR & Payroll Platform • Windows Edition
+            Enterprise HR & Payroll Platform • Mobile & Desktop
           </p>
         </div>
 
         {error && (
           <div className="error-banner">
             <AlertCircle size={18} className="error-icon" />
-            <span>{error}</span>
+            <div className="error-content">
+              <span>{error}</span>
+              {error.includes("Standalone") && (
+                <button
+                  type="button"
+                  className="btn-offline-shortcut"
+                  onClick={handleStartOfflineMode}
+                >
+                  👉 Tap here to launch Standalone Offline Mode
+                </button>
+              )}
+            </div>
           </div>
         )}
+
+        {/* 1-Tap Standalone Mode Button (Works immediately on phone without any server) */}
+        <button
+          type="button"
+          onClick={handleStartOfflineMode}
+          className="btn-offline-mode"
+          title="Run completely offline on phone without any server or hosting"
+        >
+          <div className="btn-offline-icon-box">
+            <Smartphone size={18} />
+          </div>
+          <div className="btn-offline-text">
+            <strong>Launch Standalone Mode (No Server Needed)</strong>
+            <small>Full functionality • Saves to your phone's storage</small>
+          </div>
+          <Sparkles size={16} className="sparkle-icon" />
+        </button>
+
+        <div className="login-offline-divider">
+          <span>OR SIGN IN TO A SERVER</span>
+        </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -77,7 +127,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 type="email"
                 required
                 className="login-input"
-                placeholder="Hr@gmail.com"
+                placeholder="admin@hrms.local"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
@@ -112,7 +162,10 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               onChange={(e) => setApiBaseUrlState(e.target.value)}
               autoComplete="url"
             />
-            <span className="server-url-help">For phone testing, use your computer's Wi‑Fi IP address. Keep this as 127.0.0.1 on the PC.</span>
+            <span className="server-url-help">
+              <Wifi size={11} style={{ display: "inline", marginRight: 4 }} />
+              On phone: Enter your PC's Wi‑Fi IP (e.g. http://192.168.1.5:8000/api/v1) or use Standalone Mode above.
+            </span>
           </div>
 
           <button
@@ -127,7 +180,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </>
             ) : (
               <>
-                <span>Sign In to Console</span>
+                <span>Sign In to Server</span>
                 <ArrowRight size={18} className="submit-arrow" />
               </>
             )}
