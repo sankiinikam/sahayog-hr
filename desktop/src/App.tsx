@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { LoginScreen } from "./components/LoginScreen";
+import { LandingPage } from "./components/LandingPage";
 import { AdminEmployeeDirectory, type Employee } from "./components/AdminEmployeeDirectory";
 import { AdminEmployeeProfile } from "./components/AdminEmployeeProfile";
 import { CompanyProfile } from "./components/CompanyProfile";
@@ -8,6 +9,7 @@ import { SahayogLogo } from "./components/SahayogLogo";
 import "./App.css";
 
 export const App: React.FC = () => {
+  const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState<any>(() => {
     const cached = localStorage.getItem("user_info");
     return cached ? JSON.parse(cached) : null;
@@ -25,7 +27,11 @@ export const App: React.FC = () => {
   };
 
   if (!user) {
-    return <LoginScreen onLoginSuccess={(u) => setUser(u)} />;
+    return showLogin ? (
+      <LoginScreen onLoginSuccess={(u) => setUser(u)} />
+    ) : (
+      <LandingPage onSignIn={() => setShowLogin(true)} />
+    );
   }
 
   return (
