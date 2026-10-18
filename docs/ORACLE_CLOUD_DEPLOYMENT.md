@@ -39,10 +39,10 @@ docker compose --env-file .env.oracle -f docker-compose.oracle.yml up -d --build
 docker compose --env-file .env.oracle -f docker-compose.oracle.yml logs -f api
 ```
 
-Verify `https://api.yourdomain.com/api/v1/health/` returns successfully. Create the first administrator:
+Verify `https://api.yourdomain.com/api/v1/health/` returns successfully. Create the first administrator with a unique email and strong password:
 
 ```bash
-docker compose --env-file .env.oracle -f docker-compose.oracle.yml exec api python manage.py seed_superuser
+docker compose --env-file .env.oracle -f docker-compose.oracle.yml exec api python manage.py createsuperuser
 ```
 
 ## 3. Build public client applications
