@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sahayog HR - Free Tier AWS EC2 Deployment Stack"
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: "aws-cloudformation@3"
+
+Parameters:
+  VpcId:
+    Type: "AWS::EC2::VPC::Id"
+    Description: "The VPC in which to launch the instance (default VPC recommended for free tier)"
+    Default: "vpc-0e944f63f5c58a72a"
+
+  InstanceType:
+    Type: "String"
+    Description: "EC2 instance type (t3.micro is Free Tier eligible in us-east-1)"
+    Default: "t3.micro"
+    AllowedValues:
+      - "t3.micro"
+      - "t3.small"
+
+  LatestUbuntuAmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Description: "SSM Parameter path for latest Ubuntu 24.04 LTS x86_64 AMI"
+    Default: "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+
+  KeyName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: "Name of an existing EC2 KeyPair for SSH access"
+    Default: "sahayog-hr-key"
+
+  SSHLocation:
+    Type: "String"
+    Description: "The IP address range that can SSH into the EC2 instance"
+    MinLength: "9"
+    MaxLength: "18"
+    Default: "0.0.0.0/0"
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: "Must be a valid IP CIDR range of the form x.x.x.x/x."
+
+Resources:
+  SahayogSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: "Allow web traffic (HTTP, HTTPS) and administrative SSH access to the Sahayog HR server"
+        must: "Expose port 80 and 443 for web clients and reverse proxy, and port 22 for secure management"
+    Properties:
+      GroupDescription: "Enable HTTP, HTTPS, and SSH access for Sahayog HR"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTP web access"
+        - IpProtocol: "tcp"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTPS web access"
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHLocation
+          Description: "SSH administration"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-sg"
+
+  SahayogInstance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: "Runs the Sahayog HR Django backend, PostgreSQL database, and Caddy reverse proxy via Docker"
+        must: "Configure 2GB swap space on initial boot to safely handle Docker and Django builds within RAM limits"
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestUbuntuAmiId
+      KeyName: !Ref KeyName
+      CreditSpecification:
+        CPUCredits: "standard"
+      SecurityGroupIds:
+        - !Ref SahayogSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeSize: 20
+            VolumeType: "gp3"
+            DeleteOnTermination: true
+            Encrypted: true
+      LaunchTemplate: !Ref "AWS::NoValue"
+      Tenancy: "default"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+
+          # 1. Enable 2GB swap to guarantee stability on 1GB RAM t3.micro
+          fallocate -l 2G /swapfile
+          chmod 600 /swapfile
+          mkswap /swapfile
+          swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          sysctl vm.swappiness=10
+          echo 'vm.swappiness=10' >> /etc/sysctl.conf
+
+          # 2. Update and install prerequisites
+          apt-get update -y
+          apt-get install -y ca-certificates curl gnupg lsb-release git
+
+          # 3. Install Docker Engine and Docker Compose plugin
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # 4. Enable and start Docker service
+          systemctl enable --now docker
+          usermod -aG docker ubuntu
+
+          # 5. Clone repository
+          mkdir -p /home/ubuntu/app
+          git clone https://github.com/sankiinikam/sahayog-hr.git /home/ubuntu/app
+          chown -R ubuntu:ubuntu /home/ubuntu/app
+
+          # Write cloud-init completion signal
+          echo "Sahayog HR instance initialized successfully" > /home/ubuntu/init-complete.txt
+          chown ubuntu:ubuntu /home/ubuntu/init-complete.txt
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-server"
+        - Key: "Project"
+          Value: "Sahayog-HR"
+
+Outputs:
+  InstanceId:
+    Description: "EC2 Instance ID"
+    Value: !Ref SahayogInstance
+
+  PublicIp:
+    Description: "Public IPv4 address of the Sahayog HR server"
+    Value: !GetAtt SahayogInstance.PublicIp
+
+  PublicDnsName:
+    Description: "Public DNS name of the Sahayog HR server"
+    Value: !GetAtt SahayogInstance.PublicDnsName
+
+  SSHCommand:
+    Description: "Command to SSH into the Sahayog HR server"
+    Value: !Sub "ssh -i deploy/sahayog-hr-key.pem ubuntu@${SahayogInstance.PublicIp}"

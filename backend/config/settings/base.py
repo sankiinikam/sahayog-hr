@@ -188,10 +188,11 @@ SIMPLE_JWT = {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
-# CORS
+# CORS & CSRF
 # ──────────────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
 # ──────────────────────────────────────────────────────────────────────────────
 # DRF Spectacular (OpenAPI)

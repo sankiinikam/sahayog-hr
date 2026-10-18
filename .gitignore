@@ -20,6 +20,7 @@ backend/static_collected/
 *.log
 local_settings.py
 db.sqlite3
+cloudflared.exe
 
 # Node / Desktop
 desktop/node_modules/
@@ -42,8 +43,10 @@ mobile/.env
 # Environment files (NEVER commit real secrets)
 .env
 .env.oracle
+.env.aws
 .env.local
 .env.*.local
+*.pem
 
 # IDEs
 .vscode/settings.json
