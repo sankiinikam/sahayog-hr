@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { apiClient } from "../api/client";
+import { apiClient, getApiBaseUrl, setApiBaseUrl } from "../api/client";
 import { Lock, Mail, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { SahayogLogo } from "./SahayogLogo";
 
@@ -10,12 +10,22 @@ interface LoginProps {
 export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [apiBaseUrl, setApiBaseUrlState] = useState(getApiBaseUrl);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    try {
+      const parsedUrl = new URL(apiBaseUrl.trim());
+      if (!parsedUrl.protocol.startsWith("http")) throw new Error("Unsupported protocol");
+      setApiBaseUrl(apiBaseUrl);
+    } catch {
+      setError("Enter a valid HRMS server address, including http:// or https://.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -89,6 +99,20 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 autoComplete="current-password"
               />
             </div>
+          </div>
+
+          <div className="form-group server-url-group">
+            <label className="form-label">HRMS Server Address</label>
+            <input
+              type="url"
+              required
+              className="login-input server-url-input"
+              placeholder="http://192.168.1.11:8000/api/v1"
+              value={apiBaseUrl}
+              onChange={(e) => setApiBaseUrlState(e.target.value)}
+              autoComplete="url"
+            />
+            <span className="server-url-help">For phone testing, use your computer's Wi‑Fi IP address. Keep this as 127.0.0.1 on the PC.</span>
           </div>
 
           <button

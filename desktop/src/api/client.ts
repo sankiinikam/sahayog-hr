@@ -4,6 +4,15 @@ export const getApiBaseUrl = (): string => {
   return localStorage.getItem("hrms_api_url") || (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
 };
 
+export const setApiBaseUrl = (value: string): void => {
+  const normalized = value.trim().replace(/\/+$/, "");
+  if (normalized) {
+    localStorage.setItem("hrms_api_url", normalized);
+  } else {
+    localStorage.removeItem("hrms_api_url");
+  }
+};
+
 export const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",

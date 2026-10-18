@@ -1559,6 +1559,10 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   font-weight: 500;
 }
 
+.server-url-group { margin-top: 2px !important; }
+.server-url-input { padding-left: 14px; font-size: 12.5px; }
+.server-url-help { display: block; margin-top: 6px; color: #64748b; font-size: 11px; line-height: 1.4; }
+
 .login-input:focus {
   background: #ffffff;
   border-color: var(--saffron);
