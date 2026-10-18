@@ -8,6 +8,8 @@ psycopg2-binary==2.9.9
 Pillow==10.4.0
 django-ratelimit==4.1.0
 django-filter==24.2
+gunicorn==23.0.0
+whitenoise==6.8.2
 
 # PDF generation for payslips
 WeasyPrint==62.3

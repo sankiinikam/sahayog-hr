@@ -41,6 +41,7 @@ mobile/.env
 
 # Environment files (NEVER commit real secrets)
 .env
+.env.oracle
 .env.local
 .env.*.local
 
