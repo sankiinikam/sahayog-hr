@@ -91,3 +91,4 @@ desktop/android/.idea/
 desktop/android/*.iml
 desktop/android/app/*.iml
 
+landing/.vite/
