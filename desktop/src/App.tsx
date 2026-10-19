@@ -6,6 +6,7 @@ import { AdminEmployeeProfile } from "./components/AdminEmployeeProfile";
 import { CompanyProfile } from "./components/CompanyProfile";
 import { Users, Building2, LogOut, Bell, Settings } from "lucide-react";
 import { SahayogLogo } from "./components/SahayogLogo";
+import { UpdateNotification } from "./components/UpdateNotification";
 import { isOfflineMode, setOfflineMode } from "./api/client";
 import "./App.css";
 
@@ -29,15 +30,21 @@ export const App: React.FC = () => {
   };
 
   if (!user) {
-    return showLogin ? (
-      <LoginScreen onLoginSuccess={(u) => setUser(u)} />
-    ) : (
-      <LandingPage onSignIn={() => setShowLogin(true)} />
+    return (
+      <>
+        <UpdateNotification />
+        {showLogin ? (
+          <LoginScreen onLoginSuccess={(u) => setUser(u)} />
+        ) : (
+          <LandingPage onSignIn={() => setShowLogin(true)} />
+        )}
+      </>
     );
   }
 
   return (
     <div className="app-shell">
+      <UpdateNotification />
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-brand">
