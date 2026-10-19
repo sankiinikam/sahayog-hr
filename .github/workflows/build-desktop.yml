@@ -44,13 +44,17 @@ jobs:
 
       - name: Publish installer to the latest GitHub Release
         if: github.ref == 'refs/heads/main'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = "latest"
-          gh release create $tag --target $env:GITHUB_SHA --title "Sahayog HR — Latest build" --notes "Latest downloadable Windows and Android builds."
-          if ($LASTEXITCODE -ne 0) { Write-Host "The latest release already exists." }
-          $installer = Get-ChildItem "desktop/release/*.exe" | Select-Object -First 1
-          gh release upload $tag "$($installer.FullName)#Sahayog-HR-Windows-Setup.exe" "$($installer.FullName)#Sahayog.HR.Setup.1.0.0.exe" --clobber
+          TAG="latest"
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Sahayog HR — Latest build" --notes "Latest downloadable Windows and Android builds." || true
+          INSTALLER=$(find desktop/release -name '*.exe' -type f | head -n 1)
+          if [ -n "$INSTALLER" ]; then
+            cp "$INSTALLER" "Sahayog-HR-Windows-Setup.exe"
+            cp "$INSTALLER" "Sahayog.HR.Setup.1.0.0.exe"
+            gh release upload "$TAG" "Sahayog-HR-Windows-Setup.exe" --clobber || true
+            gh release upload "$TAG" "Sahayog.HR.Setup.1.0.0.exe" --clobber || true
+          fi
 
