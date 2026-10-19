@@ -4,11 +4,17 @@ import { LandingPage } from "./components/LandingPage";
 import { AdminEmployeeDirectory, type Employee } from "./components/AdminEmployeeDirectory";
 import { AdminEmployeeProfile } from "./components/AdminEmployeeProfile";
 import { CompanyProfile } from "./components/CompanyProfile";
-import { Users, Building2, LogOut, Bell, Settings } from "lucide-react";
+import { AttendanceView } from "./components/AttendanceView";
+import { LeaveView } from "./components/LeaveView";
+import { PayrollView } from "./components/PayrollView";
+import { OperationsView } from "./components/OperationsView";
+import { Users, Clock, Calendar, Banknote, Briefcase, Building2, LogOut, Bell, Settings } from "lucide-react";
 import { SahayogLogo } from "./components/SahayogLogo";
 import { UpdateNotification } from "./components/UpdateNotification";
 import { isOfflineMode, setOfflineMode } from "./api/client";
 import "./App.css";
+
+type TabType = "employees" | "attendance" | "leave" | "payroll" | "operations" | "company";
 
 export const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
@@ -17,7 +23,7 @@ export const App: React.FC = () => {
     return cached ? JSON.parse(cached) : null;
   });
 
-  const [currentTab, setCurrentTab] = useState<"employees" | "company">("employees");
+  const [currentTab, setCurrentTab] = useState<TabType>("employees");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const handleLogout = () => {
@@ -53,7 +59,7 @@ export const App: React.FC = () => {
 
         <nav className="nav-menu">
           <button
-            className={`nav-item ${currentTab === "employees" && !selectedEmployee ? "active" : currentTab === "employees" ? "active" : ""}`}
+            className={`nav-item ${currentTab === "employees" ? "active" : ""}`}
             onClick={() => {
               setCurrentTab("employees");
               setSelectedEmployee(null);
@@ -61,6 +67,50 @@ export const App: React.FC = () => {
           >
             <Users size={18} />
             <span>Employees</span>
+          </button>
+
+          <button
+            className={`nav-item ${currentTab === "attendance" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("attendance");
+              setSelectedEmployee(null);
+            }}
+          >
+            <Clock size={18} />
+            <span>Attendance</span>
+          </button>
+
+          <button
+            className={`nav-item ${currentTab === "leave" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("leave");
+              setSelectedEmployee(null);
+            }}
+          >
+            <Calendar size={18} />
+            <span>Leave</span>
+          </button>
+
+          <button
+            className={`nav-item ${currentTab === "payroll" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("payroll");
+              setSelectedEmployee(null);
+            }}
+          >
+            <Banknote size={18} />
+            <span>Payroll</span>
+          </button>
+
+          <button
+            className={`nav-item ${currentTab === "operations" ? "active" : ""}`}
+            onClick={() => {
+              setCurrentTab("operations");
+              setSelectedEmployee(null);
+            }}
+          >
+            <Briefcase size={18} />
+            <span>Operations</span>
           </button>
 
           <button
@@ -101,10 +151,18 @@ export const App: React.FC = () => {
                 <span style={{ color: "#94a3b8" }}>›</span>
                 {selectedEmployee.first_name} {selectedEmployee.last_name}
               </span>
+            ) : currentTab === "attendance" ? (
+              "Attendance & Shift Management"
+            ) : currentTab === "leave" ? (
+              "Leave Management & Time Off"
+            ) : currentTab === "payroll" ? (
+              "Payroll & Statutory Compensation"
+            ) : currentTab === "operations" ? (
+              "Operations & Asset Management"
             ) : currentTab === "company" ? (
-              "Company Profile & Settings"
+              "Company Profile & Structure"
             ) : (
-              "Sahayog HR — Admin Console"
+              "Sahayog HR — Workforce Directory"
             )}
           </div>
           <div className="top-actions">
@@ -120,12 +178,23 @@ export const App: React.FC = () => {
             <button className="icon-btn" title="Settings">
               <Settings size={18} />
             </button>
+            <button className="icon-btn mobile-only-logout" onClick={handleLogout} title="Log Out">
+              <LogOut size={18} />
+            </button>
           </div>
         </header>
 
         <section className="content-body">
           {currentTab === "company" ? (
             <CompanyProfile />
+          ) : currentTab === "attendance" ? (
+            <AttendanceView />
+          ) : currentTab === "leave" ? (
+            <LeaveView />
+          ) : currentTab === "payroll" ? (
+            <PayrollView />
+          ) : currentTab === "operations" ? (
+            <OperationsView />
           ) : selectedEmployee ? (
             <AdminEmployeeProfile
               employeeId={selectedEmployee.id}
@@ -140,14 +209,47 @@ export const App: React.FC = () => {
       {/* Mobile Bottom Navigation Bar (Visible only on mobile screens) */}
       <nav className="mobile-bottom-nav">
         <button
-          className={`mobile-nav-btn ${currentTab === "employees" && !selectedEmployee ? "active" : ""}`}
+          className={`mobile-nav-btn ${currentTab === "employees" ? "active" : ""}`}
           onClick={() => {
             setCurrentTab("employees");
             setSelectedEmployee(null);
           }}
         >
           <Users size={19} />
-          <span>Employees</span>
+          <span>Staff</span>
+        </button>
+
+        <button
+          className={`mobile-nav-btn ${currentTab === "attendance" ? "active" : ""}`}
+          onClick={() => {
+            setCurrentTab("attendance");
+            setSelectedEmployee(null);
+          }}
+        >
+          <Clock size={19} />
+          <span>Attendance</span>
+        </button>
+
+        <button
+          className={`mobile-nav-btn ${currentTab === "leave" ? "active" : ""}`}
+          onClick={() => {
+            setCurrentTab("leave");
+            setSelectedEmployee(null);
+          }}
+        >
+          <Calendar size={19} />
+          <span>Leave</span>
+        </button>
+
+        <button
+          className={`mobile-nav-btn ${currentTab === "payroll" ? "active" : ""}`}
+          onClick={() => {
+            setCurrentTab("payroll");
+            setSelectedEmployee(null);
+          }}
+        >
+          <Banknote size={19} />
+          <span>Payroll</span>
         </button>
 
         <button
@@ -159,11 +261,6 @@ export const App: React.FC = () => {
         >
           <Building2 size={19} />
           <span>Company</span>
-        </button>
-
-        <button className="mobile-nav-btn logout" onClick={handleLogout} title="Log Out">
-          <LogOut size={19} />
-          <span>Logout</span>
         </button>
       </nav>
     </div>

@@ -178,6 +178,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   transition: all 0.15s;
 }
 .icon-btn:hover { background: var(--bg); color: var(--text-primary); }
+.mobile-only-logout { display: none; }
 
 .content-body {
   flex: 1;
@@ -1911,6 +1912,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   .top-title {
     font-size: 14px;
     font-weight: 600;
+  }
+  .mobile-only-logout {
+    display: flex;
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
   }
   .content-body {
     padding: 12px 10px;

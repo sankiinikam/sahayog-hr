@@ -69,8 +69,8 @@
 | 2.6 | Connect desktop login to API | ✅ | Axios + automatic JWT interceptor |
 | 2.7 | Session storage & automatic token refresh | ✅ | Handled on 401 via `/api/v1/auth/refresh/` |
 | 2.8 | App shell: sidebar + topbar + routing | ✅ | Modular sidebar navigation ready |
-| 2.9 | Flutter SDK installation | ⏳ | Mobile setup ready once Flutter SDK is configured |
-| 2.10 | Create Flutter project in `mobile/` | ⏳ | Feature-first structure planned |
+| 2.9 | Capacitor 8 Android setup | ✅ | Native Android project with Capacitor 8, adjustResize, insets override |
+| 2.10 | Mobile bottom navigation & responsive UI | ✅ | Responsive layout with bottom bar, quick punch & mobile modals |
 
 ---
 
@@ -113,8 +113,8 @@
 | 4.12 | Concurrent leave request test | ✅ | Overlapping requests blocked |
 | 4.13 | Attendance desktop screens | ✅ | Live punch in/out and daily history |
 | 4.14 | Leave management desktop screens | ✅ | Quota cards, apply modal, request history |
-| 4.15 | Mobile check-in/out screen | ⏳ | Blocked by Flutter |
-| 4.16 | Mobile leave screens | ⏳ | Blocked by Flutter |
+| 4.15 | Mobile check-in/out screen | ✅ | Integrated in AttendanceView & AdminEmployeeDirectory |
+| 4.16 | Mobile leave screens | ✅ | Integrated in LeaveView & mobile bottom navigation |
 
 ---
 
@@ -133,7 +133,7 @@
 | 5.9 | Payroll calculation accuracy tests | ✅ | Tested via pytest |
 | 5.10 | Payslip authorization test | ✅ | Strict employee record isolation verified |
 | 5.11 | Desktop payroll screens | ✅ | Fully integrated with printable slip modal |
-| 5.12 | Mobile payslip screens | ⏳ | Blocked by Flutter |
+| 5.12 | Mobile payslip screens | ✅ | Integrated in PayrollView & AdminEmployeeProfile |
 
 ---
 
@@ -153,25 +153,25 @@
 
 ---
 
-## Phase 7 — Production Hardening
+## Phase 7 — Production Hardening & Cloud Deployment
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 7.1 | End-to-end acceptance test scenario | ✅ | 12-step master lifecycle test passed |
 | 7.2 | Security audit (OWASP top 10) | ✅ | Documented in docs/SECURITY.md |
 | 7.3 | Rate limiting validation | ✅ | DRF Throttles & punch burst protection verified |
-| 7.4 | Desktop Windows standalone package build | ✅ | Built via electron-builder into release/win-unpacked/ |
-| 7.5 | Android APK/AAB build | ⏳ | Mobile architecture documented; blocked by Flutter SDK on host |
+| 7.4 | Desktop Windows standalone package build | ✅ | Built via electron-builder into release/win-unpacked/ & published |
+| 7.5 | Android APK build & GitHub Actions CI/CD | ✅ | Native Capacitor 8, persistent release keystore, auto-incrementing versionCode, published to GitHub Releases |
 | 7.6 | Deployment documentation | ✅ | Created comprehensive docs/DEPLOYMENT.md |
 | 7.7 | Backup + restore test | ✅ | Created and verified scripts/backup_db.py |
 | 7.8 | Database constraint review | ✅ | Verified Decimal precision, cascade protections & indices |
+| 7.9 | AWS Cloud Deployment (EC2 t3.micro) | ✅ | PostgreSQL 16 + Django Gunicorn + Caddy automatic TLS on https://34-230-20-223.sslip.io |
+| 7.10| In-App Auto-Update Notification | ✅ | UpdateNotification modal detects new GitHub Release & triggers direct APK install |
+| 7.11| Soft-Keyboard & Insets Normalization | ✅ | adjustResize + CoordinatorLayout insets override eliminates black gap above keyboard |
 
 ---
 
 ## Blockers
 
-| # | Blocker | Impact | Resolution |
-|---|---------|--------|------------|
-| B1 | Flutter SDK not installed | Mobile development blocked | Install Flutter SDK manually |
-| B2 | psql not on system PATH | Minor | Use explicit path or set PATH permanently |
+*All primary architectural blockers have been resolved.* (Flutter replaced by native Capacitor 8 Android app with shared codebase).
 
