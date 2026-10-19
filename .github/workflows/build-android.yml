@@ -54,7 +54,7 @@ jobs:
       - name: Build Android Debug APK
         working-directory: desktop/android
         run: |
-          ./gradlew assembleDebug -PversionCode=${{ github.run_number }} -PversionName="1.0.${{ github.run_number }}" --no-daemon --stacktrace > gradle.log 2>&1 || {
+          ./gradlew clean assembleDebug -PversionCode=${{ github.run_number }} -PversionName="1.0.${{ github.run_number }}" --no-daemon --stacktrace > gradle.log 2>&1 || {
             cat gradle.log | tail -n 80
             exit 1
           }
