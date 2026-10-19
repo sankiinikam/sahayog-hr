@@ -17,7 +17,8 @@ import "./App.css";
 type TabType = "employees" | "attendance" | "leave" | "payroll" | "operations" | "company";
 
 export const App: React.FC = () => {
-  const [showLogin, setShowLogin] = useState(false);
+  // Open the Login page directly on app launch (Mobile & Desktop)
+  const [showLogin, setShowLogin] = useState(true);
   const [user, setUser] = useState<any>(() => {
     const cached = localStorage.getItem("user_info");
     return cached ? JSON.parse(cached) : null;
@@ -40,7 +41,10 @@ export const App: React.FC = () => {
       <>
         <UpdateNotification />
         {showLogin ? (
-          <LoginScreen onLoginSuccess={(u) => setUser(u)} />
+          <LoginScreen
+            onLoginSuccess={(u) => setUser(u)}
+            onViewLanding={() => setShowLogin(false)}
+          />
         ) : (
           <LandingPage onSignIn={() => setShowLogin(true)} />
         )}
@@ -257,6 +261,17 @@ export const App: React.FC = () => {
         >
           <Banknote size={19} />
           <span>Payroll</span>
+        </button>
+
+        <button
+          className={`mobile-nav-btn ${currentTab === "operations" ? "active" : ""}`}
+          onClick={() => {
+            setCurrentTab("operations");
+            setSelectedEmployee(null);
+          }}
+        >
+          <Briefcase size={19} />
+          <span>Ops</span>
         </button>
 
         <button

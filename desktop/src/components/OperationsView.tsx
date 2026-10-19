@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiClient } from "../api/client";
-import { UserCheck, Laptop, Receipt, Bell, Check } from "lucide-react";
+import { UserCheck, Laptop, Receipt, Bell, Check, RefreshCw } from "lucide-react";
 
 export const OperationsView: React.FC = () => {
   const [requisitions, setRequisitions] = useState<any[]>([]);
@@ -8,6 +8,7 @@ export const OperationsView: React.FC = () => {
   const [assets, setAssets] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"requisitions" | "assets" | "claims" | "alerts">("requisitions");
 
   const fetchData = async () => {
     setLoading(true);
@@ -42,128 +43,258 @@ export const OperationsView: React.FC = () => {
     }
   };
 
+  const unreadAlerts = notifications.filter((n) => !n.is_read).length;
+
   return (
-    <div className="directory-container">
-      <div className="page-header">
+    <div className="directory-container animate-fade-in">
+      <div className="page-header modern-page-header">
         <div>
           <h2>Operations & Support Center</h2>
-          <p>Unified console for Recruitment, Expense Claims, Company Assets, and In-App Notifications</p>
+          <p>Recruitment pipelines, corporate asset custody, expense claims, and enterprise alerts</p>
+        </div>
+        <div className="header-actions">
+          <button className="icon-btn" onClick={fetchData} title="Refresh Operations" disabled={loading}>
+            <RefreshCw size={17} className={loading ? "spin" : ""} />
+          </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-state">Loading operations metrics...</div>
-      ) : (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>OPEN REQUISITIONS</span>
-            <UserCheck size={18} color="var(--primary)" />
+      {/* Modern KPI Summary Strip */}
+      <div className="ops-kpi-grid">
+        <div
+          className={`ops-kpi-card ${activeTab === "requisitions" ? "active-kpi" : ""}`}
+          onClick={() => setActiveTab("requisitions")}
+        >
+          <div className="ops-kpi-icon icon-purple">
+            <UserCheck size={20} />
           </div>
-          <div style={{ fontSize: "1.8rem", fontWeight: "700", marginTop: "8px" }}>{requisitions.length}</div>
+          <div className="ops-kpi-body">
+            <span className="ops-kpi-lbl">REQUISITIONS</span>
+            <strong className="ops-kpi-val">{requisitions.length}</strong>
+          </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>ACTIVE ASSETS</span>
-            <Laptop size={18} color="#0891b2" />
+        <div
+          className={`ops-kpi-card ${activeTab === "assets" ? "active-kpi" : ""}`}
+          onClick={() => setActiveTab("assets")}
+        >
+          <div className="ops-kpi-icon icon-cyan">
+            <Laptop size={20} />
           </div>
-          <div style={{ fontSize: "1.8rem", fontWeight: "700", marginTop: "8px" }}>{assets.length}</div>
+          <div className="ops-kpi-body">
+            <span className="ops-kpi-lbl">ACTIVE ASSETS</span>
+            <strong className="ops-kpi-val">{assets.length}</strong>
+          </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>EXPENSE CLAIMS</span>
-            <Receipt size={18} color="#16a34a" />
+        <div
+          className={`ops-kpi-card ${activeTab === "claims" ? "active-kpi" : ""}`}
+          onClick={() => setActiveTab("claims")}
+        >
+          <div className="ops-kpi-icon icon-emerald">
+            <Receipt size={20} />
           </div>
-          <div style={{ fontSize: "1.8rem", fontWeight: "700", marginTop: "8px" }}>{claims.length}</div>
+          <div className="ops-kpi-body">
+            <span className="ops-kpi-lbl">EXPENSE CLAIMS</span>
+            <strong className="ops-kpi-val">{claims.length}</strong>
+          </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>UNREAD ALERTS</span>
-            <Bell size={18} color="#eab308" />
+        <div
+          className={`ops-kpi-card ${activeTab === "alerts" ? "active-kpi" : ""}`}
+          onClick={() => setActiveTab("alerts")}
+        >
+          <div className="ops-kpi-icon icon-amber">
+            <Bell size={20} />
           </div>
-          <div style={{ fontSize: "1.8rem", fontWeight: "700", marginTop: "8px" }}>
-            {notifications.filter((n) => !n.is_read).length}
+          <div className="ops-kpi-body">
+            <span className="ops-kpi-lbl">NOTIFICATIONS</span>
+            <strong className="ops-kpi-val">
+              {unreadAlerts > 0 ? `${unreadAlerts} unread` : "0 unread"}
+            </strong>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-        {/* Recruitment Pipeline */}
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <h3 style={{ marginBottom: "12px", fontSize: "1.1rem" }}>Open Job Requisitions</h3>
-          {requisitions.length === 0 ? (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>No active job requisitions found.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Department</th>
-                    <th>Openings</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requisitions.map((r) => (
-                    <tr key={r.id}>
-                      <td><strong>{r.title}</strong></td>
-                      <td>{r.department}</td>
-                      <td>{r.vacancies}</td>
-                      <td><span className="status-badge status-confirmed">{r.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Segment Switcher for mobile navigation */}
+      <div className="ops-segment-tabs">
+        <button
+          className={`segment-btn ${activeTab === "requisitions" ? "active" : ""}`}
+          onClick={() => setActiveTab("requisitions")}
+        >
+          <UserCheck size={16} />
+          <span>Hiring ({requisitions.length})</span>
+        </button>
+        <button
+          className={`segment-btn ${activeTab === "assets" ? "active" : ""}`}
+          onClick={() => setActiveTab("assets")}
+        >
+          <Laptop size={16} />
+          <span>Assets ({assets.length})</span>
+        </button>
+        <button
+          className={`segment-btn ${activeTab === "claims" ? "active" : ""}`}
+          onClick={() => setActiveTab("claims")}
+        >
+          <Receipt size={16} />
+          <span>Claims ({claims.length})</span>
+        </button>
+        <button
+          className={`segment-btn ${activeTab === "alerts" ? "active" : ""}`}
+          onClick={() => setActiveTab("alerts")}
+        >
+          <Bell size={16} />
+          <span>Alerts {unreadAlerts > 0 && `(${unreadAlerts})`}</span>
+        </button>
+      </div>
+
+      {/* Tab Panels */}
+      <div className="ops-panel-container">
+        {loading ? (
+          <div className="loading-state">
+            <RefreshCw size={24} className="spin text-muted" />
+            <p>Loading operational metrics...</p>
+          </div>
+        ) : activeTab === "requisitions" ? (
+          <div className="ops-tab-panel animate-fade-in">
+            <div className="section-title-row">
+              <h3>Open Job Requisitions</h3>
+              <span className="badge-count">{requisitions.length} open</span>
             </div>
-          )}
-        </div>
 
-        {/* In-App Notifications */}
-        <div style={{ background: "#fff", padding: "16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
-          <h3 style={{ marginBottom: "12px", fontSize: "1.1rem" }}>In-App Notifications</h3>
-          {notifications.length === 0 ? (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>No notifications at this time.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border)",
-                    background: n.is_read ? "#fff" : "#eff6ff",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: "0.9rem", display: "block" }}>{n.title}</strong>
-                    <small style={{ color: "var(--text-muted)" }}>{n.message}</small>
+            {requisitions.length === 0 ? (
+              <div className="empty-state">
+                <UserCheck size={44} color="#94a3b8" />
+                <p>No open job openings currently listed.</p>
+              </div>
+            ) : (
+              <div className="ops-card-list">
+                {requisitions.map((r) => (
+                  <div key={r.id} className="ops-item-card">
+                    <div className="ops-item-header">
+                      <div>
+                        <h4 className="ops-item-title">{r.title}</h4>
+                        <span className="ops-item-sub">{r.department || "General Department"}</span>
+                      </div>
+                      <span className="status-badge status-confirmed">{r.status || "OPEN"}</span>
+                    </div>
+                    <div className="ops-item-meta">
+                      <span>Vacancies: <strong>{r.vacancies || 1}</strong></span>
+                      <span className="divider">•</span>
+                      <span>Target Date: <strong>{r.target_date || "Immediate"}</strong></span>
+                    </div>
                   </div>
-                  {!n.is_read && (
-                    <button
-                      className="btn-secondary"
-                      style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                      onClick={() => markNotifRead(n.id)}
-                    >
-                      <Check size={12} /> Mark Read
-                    </button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "assets" ? (
+          <div className="ops-tab-panel animate-fade-in">
+            <div className="section-title-row">
+              <h3>Corporate Equipment & Assets</h3>
+              <span className="badge-count">{assets.length} assigned</span>
             </div>
-          )}
-        </div>
+
+            {assets.length === 0 ? (
+              <div className="empty-state">
+                <Laptop size={44} color="#94a3b8" />
+                <p>No corporate assets recorded yet.</p>
+              </div>
+            ) : (
+              <div className="ops-card-list">
+                {assets.map((a) => (
+                  <div key={a.id} className="ops-item-card">
+                    <div className="ops-item-header">
+                      <div>
+                        <h4 className="ops-item-title">{a.asset_name || a.name}</h4>
+                        <span className="ops-item-sub">Serial: {a.serial_number || "—"}</span>
+                      </div>
+                      <span className="status-badge status-confirmed">{a.status || "IN USE"}</span>
+                    </div>
+                    <div className="ops-item-meta">
+                      <span>Assigned To: <strong>{a.assigned_to_name || "Employee"}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "claims" ? (
+          <div className="ops-tab-panel animate-fade-in">
+            <div className="section-title-row">
+              <h3>Expense Reimbursement Claims</h3>
+              <span className="badge-count">{claims.length} claims</span>
+            </div>
+
+            {claims.length === 0 ? (
+              <div className="empty-state">
+                <Receipt size={44} color="#94a3b8" />
+                <p>No expense reimbursement claims submitted.</p>
+              </div>
+            ) : (
+              <div className="ops-card-list">
+                {claims.map((c) => (
+                  <div key={c.id} className="ops-item-card">
+                    <div className="ops-item-header">
+                      <div>
+                        <h4 className="ops-item-title">{c.category || "Travel / Meals"}</h4>
+                        <span className="ops-item-sub">{c.claim_date || "Recent"}</span>
+                      </div>
+                      <strong className="text-emerald font-bold">₹{c.amount}</strong>
+                    </div>
+                    <div className="ops-item-meta">
+                      <span className={`status-badge status-${(c.status || "pending").toLowerCase()}`}>
+                        {c.status || "PENDING"}
+                      </span>
+                      <span>{c.description}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="ops-tab-panel animate-fade-in">
+            <div className="section-title-row">
+              <h3>Enterprise In-App Alerts</h3>
+              <span className="badge-count">{unreadAlerts} unread</span>
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="empty-state">
+                <Bell size={44} color="#94a3b8" />
+                <p>No notifications at this time.</p>
+              </div>
+            ) : (
+              <div className="ops-card-list">
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`ops-notif-card ${!n.is_read ? "notif-unread" : ""}`}
+                  >
+                    <div className="notif-content">
+                      <h4 className="notif-title">{n.title}</h4>
+                      <p className="notif-msg">{n.message}</p>
+                    </div>
+                    {!n.is_read && (
+                      <button
+                        className="btn-mark-read"
+                        onClick={() => markNotifRead(n.id)}
+                        title="Mark as read"
+                      >
+                        <Check size={14} />
+                        <span>Read</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-        </>
-      )}
     </div>
   );
 };
+
+export default OperationsView;

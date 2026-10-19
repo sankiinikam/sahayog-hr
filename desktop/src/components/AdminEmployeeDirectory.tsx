@@ -58,6 +58,7 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
   // Today's date for attendance marking (local timezone)
   const todayDate = getLocalDateString();
   const [attendanceMap, setAttendanceMap] = useState<Record<number, TodayAttendance>>({});
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "PRESENT" | "ABSENT">("ALL");
 
   // Clean Add Employee form with photo
   const [addForm, setAddForm] = useState({
@@ -350,22 +351,31 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     }
   };
 
+  const presentCount = Object.values(attendanceMap).filter(a => a.status === "PRESENT").length;
+  const absentCount = Object.values(attendanceMap).filter(a => a.status === "ABSENT").length;
+
   const filtered = employees.filter(e => {
     const q = search.toLowerCase();
-    return !q ||
+    const matchQuery = !q ||
       e.first_name?.toLowerCase().includes(q) ||
       e.last_name?.toLowerCase().includes(q) ||
       e.employee_code?.toLowerCase().includes(q) ||
       e.work_email?.toLowerCase().includes(q) ||
       e.personal_phone?.includes(q);
+
+    if (!matchQuery) return false;
+
+    if (filterStatus === "PRESENT") return attendanceMap[e.id]?.status === "PRESENT";
+    if (filterStatus === "ABSENT") return attendanceMap[e.id]?.status === "ABSENT";
+    return true;
   });
 
   const activeCount = employees.filter(e => e.is_active).length;
 
   return (
-    <div>
+    <div className="directory-container animate-fade-in">
       {/* Page Header */}
-      <div className="page-header">
+      <div className="page-header modern-page-header">
         <div>
           <h1>Employee Directory</h1>
           <p>{employees.length} total staff · {activeCount} active · 12-Hour Standard Shift Mode</p>
@@ -386,6 +396,28 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
             <Plus size={16} /> Add Employee
           </button>
         </div>
+      </div>
+
+      {/* Quick Filter Chips */}
+      <div className="directory-filter-chips">
+        <button
+          className={`filter-chip ${filterStatus === "ALL" ? "active" : ""}`}
+          onClick={() => setFilterStatus("ALL")}
+        >
+          All Staff ({employees.length})
+        </button>
+        <button
+          className={`filter-chip chip-present ${filterStatus === "PRESENT" ? "active" : ""}`}
+          onClick={() => setFilterStatus("PRESENT")}
+        >
+          <span className="dot dot-active" /> Present Today ({presentCount})
+        </button>
+        <button
+          className={`filter-chip chip-absent ${filterStatus === "ABSENT" ? "active" : ""}`}
+          onClick={() => setFilterStatus("ABSENT")}
+        >
+          <span className="dot dot-inactive" /> Absent ({absentCount})
+        </button>
       </div>
 
       {/* Directory List — Rectangular Bars with Attendance Marking */}
@@ -539,6 +571,15 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
           })}
         </div>
       )}
+
+      {/* Mobile Floating Action Button (FAB) for Add Employee */}
+      <button
+        className="mobile-fab-add"
+        onClick={handleOpenAddModal}
+        title="Add New Employee"
+      >
+        <Plus size={22} />
+      </button>
 
       {/* Add Employee Modal (Includes Photo Upload) */}
       {showAddModal && (
