@@ -85,5 +85,8 @@ jobs:
           TAG="latest"
           gh release create "$TAG" --target "$GITHUB_SHA" --title "Sahayog HR — Latest build" --notes "Latest downloadable Windows and Android builds." || true
           APK_PATH=$(find desktop/android/app/build/outputs/apk -name '*.apk' -type f | head -n 1)
-          gh release upload "$TAG" "$APK_PATH#Sahayog-HR-Android-debug.apk" "$APK_PATH#app-debug.apk" --clobber
+          cp "$APK_PATH" "Sahayog-HR-Android-debug.apk"
+          cp "$APK_PATH" "app-debug.apk"
+          gh release upload "$TAG" "Sahayog-HR-Android-debug.apk" --clobber || true
+          gh release upload "$TAG" "app-debug.apk" --clobber || true
 
