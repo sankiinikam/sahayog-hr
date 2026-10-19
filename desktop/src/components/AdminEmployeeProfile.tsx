@@ -300,7 +300,7 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
       </div>
 
       {/* 30-Day Stats */}
-      <div className="stats-row" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
+      <div className="stats-row profile-stats-grid">
         <div className="stat-card">
           <div className="stat-icon" style={{ background: "#f0fdf4" }}>
             <span style={{ fontSize: 18, color: "#16a34a" }}>✓</span>
@@ -400,81 +400,83 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
               No attendance records found for {historyMonth} with status "{historyFilter}"
             </div>
           ) : (
-            <table className="history-detail-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Clock In</th>
-                  <th>Clock Out</th>
-                  <th>Worked Time</th>
-                  <th>Overtime (&gt;12h)</th>
-                  <th>Cross-Verification</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredHistory.map(rec => {
-                  const isVerified = verifiedMap[rec.id];
-                  const hasOt = (rec.overtime_minutes || 0) > 0;
-                  const workedHours = (rec.worked_minutes / 60).toFixed(1);
+            <div className="history-detail-table-wrap">
+              <table className="history-detail-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Clock In</th>
+                    <th>Clock Out</th>
+                    <th>Worked Time</th>
+                    <th>Overtime (&gt;12h)</th>
+                    <th>Cross-Verification</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map(rec => {
+                    const isVerified = verifiedMap[rec.id];
+                    const hasOt = (rec.overtime_minutes || 0) > 0;
+                    const workedHours = (rec.worked_minutes / 60).toFixed(1);
 
-                  return (
-                    <tr key={rec.id}>
-                      <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                        {rec.attendance_date}
-                      </td>
-                      <td>
-                        <span className={badge(rec.status)}>
-                          {rec.status.replace("_", " ")}
-                        </span>
-                      </td>
-                      <td>
-                        {rec.first_in ? to12Hour(rec.first_in) : "—"}
-                      </td>
-                      <td>
-                        {rec.last_out ? to12Hour(rec.last_out) : "—"}
-                      </td>
-                      <td>
-                        {rec.worked_minutes > 0 ? (
-                          <span>{Math.floor(rec.worked_minutes / 60)}h {rec.worked_minutes % 60}m ({workedHours}h)</span>
-                        ) : (
-                          <span style={{ color: "#94a3b8" }}>—</span>
-                        )}
-                      </td>
-                      <td>
-                        {hasOt ? (
-                          <span className="ot-badge-pill">
-                            +{Math.floor(rec.overtime_minutes / 60)}h {rec.overtime_minutes % 60 > 0 ? `${rec.overtime_minutes % 60}m ` : ""}OT
+                    return (
+                      <tr key={rec.id}>
+                        <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                          {rec.attendance_date}
+                        </td>
+                        <td>
+                          <span className={badge(rec.status)}>
+                            {rec.status.replace("_", " ")}
                           </span>
-                        ) : (
-                          <span style={{ color: "#94a3b8", fontSize: 12 }}>None</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`verify-toggle-btn ${isVerified ? "verified" : "pending"}`}
-                          onClick={() => handleToggleVerify(rec.id)}
-                          title="Click to toggle cross-verification status"
-                        >
-                          {isVerified ? (
-                            <>
-                              <CheckCircle2 size={13} color="#16a34a" />
-                              <span>Verified</span>
-                            </>
+                        </td>
+                        <td>
+                          {rec.first_in ? to12Hour(rec.first_in) : "—"}
+                        </td>
+                        <td>
+                          {rec.last_out ? to12Hour(rec.last_out) : "—"}
+                        </td>
+                        <td>
+                          {rec.worked_minutes > 0 ? (
+                            <span>{Math.floor(rec.worked_minutes / 60)}h {rec.worked_minutes % 60}m ({workedHours}h)</span>
                           ) : (
-                            <>
-                              <AlertCircle size={13} color="#d97706" />
-                              <span>Verify</span>
-                            </>
+                            <span style={{ color: "#94a3b8" }}>—</span>
                           )}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td>
+                          {hasOt ? (
+                            <span className="ot-badge-pill">
+                              +{Math.floor(rec.overtime_minutes / 60)}h {rec.overtime_minutes % 60 > 0 ? `${rec.overtime_minutes % 60}m ` : ""}OT
+                            </span>
+                          ) : (
+                            <span style={{ color: "#94a3b8", fontSize: 12 }}>None</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className={`verify-toggle-btn ${isVerified ? "verified" : "pending"}`}
+                            onClick={() => handleToggleVerify(rec.id)}
+                            title="Click to toggle cross-verification status"
+                          >
+                            {isVerified ? (
+                              <>
+                                <CheckCircle2 size={13} color="#16a34a" />
+                                <span>Verified</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle size={13} color="#d97706" />
+                                <span>Verify</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

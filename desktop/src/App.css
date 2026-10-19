@@ -29,12 +29,20 @@
   --radius-sm: 6px;
 }
 
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 14px; color: var(--text-primary); background: var(--bg); }
+html, body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg);
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 
 /* -- App Shell ------------------------------------------------ */
 .app-shell {
   display: flex;
   width: 100vw;
+  max-width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
@@ -444,6 +452,14 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.emp-bar-subline-mobile {
+  display: none;
+}
+
+.desktop-only-col {
+  display: flex;
 }
 
 .col-code {
@@ -1942,7 +1958,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   }
   .content-body {
     padding: 14px 14px 90px !important; /* Clearance for bottom nav */
-    box-sizing: border-box;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
   }
 
   /* Directory Rows -> Clean Mobile Cards with Zero Text Overlap */
@@ -1967,6 +1985,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
     width: 100% !important;
     box-sizing: border-box !important;
   }
+  .desktop-only-col {
+    display: none !important;
+  }
   .emp-bar-top-row {
     display: flex !important;
     align-items: center !important;
@@ -1977,36 +1998,65 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   .emp-bar-top-left {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 10px !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
-  }
-  .col-sr {
-    flex-shrink: 0 !important;
   }
   .col-name {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 10px !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
   }
   .emp-name-box {
+    display: flex !important;
+    flex-direction: column !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
   }
   .emp-bar-name {
-    font-size: 14px !important;
+    font-size: 14.5px !important;
     font-weight: 700 !important;
     color: #0f172a !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     display: block !important;
-    max-width: 140px !important;
+    max-width: 150px !important;
   }
-  .col-code {
-    flex-shrink: 0 !important;
+  .emp-bar-subline-mobile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: 3px !important;
+  }
+  .emp-bar-subline-mobile .subline-code {
+    font-family: monospace !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    background: #f1f5f9 !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 11px !important;
+  }
+  .emp-bar-subline-mobile .subline-sr {
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    font-size: 11px !important;
+  }
+  .emp-bar-subline-mobile .subline-sep {
+    color: #cbd5e1 !important;
+    font-size: 10px !important;
+  }
+  .emp-bar-subline-mobile .subline-dept {
+    color: #64748b !important;
+    font-size: 11px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 85px !important;
   }
   .emp-bar-top-right {
     display: flex !important;
@@ -2098,32 +2148,90 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
     color: #f87171;
   }
 
-  /* Employee Profile & History on Mobile */
+  /* Employee Profile & History on Mobile - Zero Horizontal Overflow */
   .profile-header {
+    display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 14px !important;
     padding: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .profile-info {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .profile-name {
+    word-break: break-word !important;
+  }
+  .profile-meta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 4px !important;
+    box-sizing: border-box !important;
+  }
+  .profile-meta-item {
+    text-align: left !important;
   }
   .profile-header-actions {
     width: 100% !important;
     justify-content: flex-start !important;
   }
   .profile-stats-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .profile-columns {
     display: flex !important;
     flex-direction: column !important;
     gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .profile-col {
     width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .history-detail-table-wrap {
+  .history-detail-table-wrap,
+  .att-table-scroll-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+  }
+  .workhub {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .card {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .card-header {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+  .history-filter-pills {
+    display: flex !important;
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
   }
 
   /* Clean Mobile Modal / Bottom Sheet: Never scrolls into blank white screen */
@@ -3436,21 +3544,71 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size:
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 14px;
-  padding: 0 14px;
+  padding: 0 14px !important;
+  gap: 10px !important;
   transition: all 0.2s ease;
 }
 .modern-input-group:focus-within {
   border-color: #f97316;
   box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
 }
+.modern-input-group .input-icon {
+  position: static !important;
+  left: auto !important;
+  flex-shrink: 0 !important;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
 .modern-input-group .login-input {
+  flex: 1 1 auto !important;
   border: none !important;
   background: transparent !important;
-  padding: 12px 10px !important;
+  padding: 13px 0 !important;
   box-shadow: none !important;
-  width: 100%;
+  width: auto !important;
+  min-width: 0 !important;
+  font-size: 14px !important;
+  color: #0f172a !important;
+  outline: none !important;
+}
+.modern-input-group .login-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+.admin-access-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid #bfdbfe;
+  margin-bottom: 8px;
+}
+.server-settings-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+.btn-link-server-toggle {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.btn-link-server-toggle:hover {
+  color: #64748b;
 }
 .input-eye-btn {
+  flex-shrink: 0 !important;
   background: transparent;
   border: none;
   color: #94a3b8;

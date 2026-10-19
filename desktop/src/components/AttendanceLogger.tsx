@@ -239,26 +239,28 @@ export const AttendanceLogger: React.FC<Props> = ({ employeeId, shifts }) => {
           ) : history.length === 0 ? (
             <div style={{ textAlign: "center", color: "#94a3b8", padding: "12px 0", fontSize: 13 }}>No records yet</div>
           ) : (
-            <table className="att-history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>In</th>
-                  <th>Out</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.slice(0, 15).map(rec => (
-                  <tr key={rec.attendance_date} style={{ cursor: "pointer" }} onClick={() => loadRecord(rec)}>
-                    <td>{rec.attendance_date}</td>
-                    <td><span className={badge(rec.status)}>{rec.status.replace("_", " ")}</span></td>
-                    <td>{fmt(rec.first_in)}</td>
-                    <td>{fmt(rec.last_out)}</td>
+            <div className="att-table-scroll-wrap">
+              <table className="att-history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>In</th>
+                    <th>Out</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {history.slice(0, 15).map(rec => (
+                    <tr key={rec.attendance_date} style={{ cursor: "pointer" }} onClick={() => loadRecord(rec)}>
+                      <td>{rec.attendance_date}</td>
+                      <td><span className={badge(rec.status)}>{rec.status.replace("_", " ")}</span></td>
+                      <td>{fmt(rec.first_in)}</td>
+                      <td>{fmt(rec.last_out)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

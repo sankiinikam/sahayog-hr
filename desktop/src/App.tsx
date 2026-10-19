@@ -21,7 +21,19 @@ export const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(true);
   const [user, setUser] = useState<any>(() => {
     const cached = localStorage.getItem("user_info");
-    return cached ? JSON.parse(cached) : null;
+    if (!cached) return null;
+    try {
+      const parsed = JSON.parse(cached);
+      if (parsed.role && parsed.role !== "ADMIN" && !parsed.is_superuser && !parsed.is_staff) {
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
   });
 
   const [currentTab, setCurrentTab] = useState<TabType>("employees");

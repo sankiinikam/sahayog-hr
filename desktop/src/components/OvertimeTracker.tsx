@@ -160,77 +160,79 @@ export const OvertimeTracker: React.FC<Props> = ({ employeeId, standardHoursPerD
             No overtime logged (&gt;30m over 12h shift)
           </div>
         ) : (
-          <table className="att-history-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Worked</th>
-                <th>Overtime</th>
-                <th style={{ textAlign: "right" }}>Edit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overtimeDays.map(r => (
-                <tr key={r.attendance_date}>
-                  <td>{r.attendance_date}</td>
-                  <td>{fmtHours(r.worked_minutes)}</td>
-                  <td>
-                    {editingId === r.id ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <input
-                          type="number"
-                          min={0}
-                          value={editMinutes}
-                          onChange={e => setEditMinutes(Number(e.target.value))}
-                          style={{ width: 60, padding: "2px 6px", fontSize: 12, border: "1px solid #3b82f6", borderRadius: 4 }}
-                        />
-                        <span style={{ fontSize: 11, color: "#64748b" }}>min</span>
-                      </div>
-                    ) : (
-                      <span style={{ color: "#2563eb", fontWeight: 700 }}>
-                        {fmtHours(r.overtime_minutes || 0)} ({r.overtime_minutes || 0}m)
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    {editingId === r.id ? (
-                      <div style={{ display: "inline-flex", gap: 4 }}>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-xs"
-                          style={{ padding: "2px 6px" }}
-                          onClick={() => r.id && handleSaveOt(r.id)}
-                          disabled={savingId === r.id}
-                          title="Save OT"
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-xs"
-                          style={{ padding: "2px 6px" }}
-                          onClick={() => setEditingId(null)}
-                          title="Cancel"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-icon-action"
-                        style={{ width: 24, height: 24, display: "inline-flex" }}
-                        onClick={() => handleStartEdit(r)}
-                        title="Edit Overtime"
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                    )}
-                  </td>
+          <div className="att-table-scroll-wrap">
+            <table className="att-history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Worked</th>
+                  <th>Overtime</th>
+                  <th style={{ textAlign: "right" }}>Edit</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {overtimeDays.map(r => (
+                  <tr key={r.attendance_date}>
+                    <td>{r.attendance_date}</td>
+                    <td>{fmtHours(r.worked_minutes)}</td>
+                    <td>
+                      {editingId === r.id ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editMinutes}
+                            onChange={e => setEditMinutes(Number(e.target.value))}
+                            style={{ width: 60, padding: "2px 6px", fontSize: 12, border: "1px solid #3b82f6", borderRadius: 4 }}
+                          />
+                          <span style={{ fontSize: 11, color: "#64748b" }}>min</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: "#2563eb", fontWeight: 700 }}>
+                          {fmtHours(r.overtime_minutes || 0)} ({r.overtime_minutes || 0}m)
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {editingId === r.id ? (
+                        <div style={{ display: "inline-flex", gap: 4 }}>
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-xs"
+                            style={{ padding: "2px 6px" }}
+                            onClick={() => r.id && handleSaveOt(r.id)}
+                            disabled={savingId === r.id}
+                            title="Save OT"
+                          >
+                            <Check size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-xs"
+                            style={{ padding: "2px 6px" }}
+                            onClick={() => setEditingId(null)}
+                            title="Cancel"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-icon-action"
+                          style={{ width: 24, height: 24, display: "inline-flex" }}
+                          onClick={() => handleStartEdit(r)}
+                          title="Edit Overtime"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Configured rate notice */}

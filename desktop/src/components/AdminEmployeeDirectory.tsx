@@ -475,8 +475,8 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
               >
                 <div className="emp-bar-top-row">
                   <div className="emp-bar-top-left">
-                    {/* Sr. No. */}
-                    <div className="col-sr">
+                    {/* Sr. No. (Desktop Table Column) */}
+                    <div className="col-sr desktop-only-col">
                       <span className="sr-pill">#{String(index + 1).padStart(2, "0")}</span>
                     </div>
 
@@ -489,11 +489,17 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                       )}
                       <div className="emp-name-box">
                         <span className="emp-bar-name">{emp.first_name} {emp.last_name}</span>
+                        {/* Mobile subline: Emp Code + Sr # neatly under the name */}
+                        <div className="emp-bar-subline-mobile">
+                          <span className="subline-sr">#{String(index + 1).padStart(2, "0")}</span>
+                          <span className="subline-sep">•</span>
+                          <span className="subline-code">{emp.employee_code}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Employee Code */}
-                    <div className="col-code">
+                    {/* Employee Code (Desktop Table Column) */}
+                    <div className="col-code desktop-only-col">
                       <span className="code-badge">{emp.employee_code}</span>
                     </div>
                   </div>

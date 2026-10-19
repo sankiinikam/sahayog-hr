@@ -57,6 +57,13 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
       setOfflineMode(false);
       const response = await apiClient.post("/auth/login/", { email, password });
       const { access, refresh, user } = response.data;
+
+      // Strict Administrator access enforcement
+      if (user.role && user.role !== "ADMIN" && !user.is_superuser && !user.is_staff) {
+        setError("Access Restricted: This application is reserved for Administrators only.");
+        return;
+      }
+
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
       localStorage.setItem("user_info", JSON.stringify(user));
@@ -65,12 +72,14 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else {
-        setError("Unable to connect to HRMS server at " + apiBaseUrl + ". Switch to Standalone Mode for instant access.");
+        setError("Unable to connect to HRMS server. Switch to Standalone Mode for instant offline access.");
       }
     } finally {
       setLoading(false);
     }
   };
+
+  const [showAdvancedServer, setShowAdvancedServer] = useState(false);
 
   return (
     <div className="login-container">
@@ -85,8 +94,12 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
           <div className="login-logo-wrapper">
             <SahayogLogo size="lg" variant="full" showSubtitle={true} />
           </div>
+          <div className="admin-access-badge">
+            <ShieldCheck size={14} />
+            <span>Administrator Portal</span>
+          </div>
           <p className="login-subtitle">
-            Enterprise People & Payroll Suite • Direct Mobile Access
+            Enterprise Workforce Suite • Restricted Admin Access
           </p>
         </div>
 
@@ -132,11 +145,11 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
           <div className="standalone-launch-card animate-fade-in">
             <div className="standalone-info">
               <div className="standalone-badge">
-                <Sparkles size={14} className="sparkle-anim" /> 1-Tap Offline Mode
+                <Sparkles size={14} className="sparkle-anim" /> 1-Tap Admin Mode
               </div>
               <h4>No Server or Internet Needed</h4>
               <p>
-                Run the full Sahayog HR suite directly on your device. Employees, attendance logs, and payslips are saved securely to local storage.
+                Run the Sahayog HR administrator suite directly on your device. Employees, attendance logs, and payslips are saved securely to local storage.
               </p>
             </div>
 
@@ -145,7 +158,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
               onClick={handleStartOfflineMode}
               className="btn-launch-standalone"
             >
-              <span>Launch Standalone Mode</span>
+              <span>Launch Admin Offline Mode</span>
               <ArrowRight size={18} />
             </button>
           </div>
@@ -159,7 +172,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
                   type="email"
                   required
                   className="login-input"
-                  placeholder="admin@sahayog.local"
+                  placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -175,7 +188,7 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
                   type={showPassword ? "text" : "password"}
                   required
                   className="login-input"
-                  placeholder="••••••••"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
@@ -191,21 +204,34 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
               </div>
             </div>
 
-            <div className="form-group server-url-group">
-              <label className="form-label">Server Endpoint</label>
-              <div className="input-group modern-input-group">
-                <Wifi size={17} className="input-icon" />
-                <input
-                  type="url"
-                  required
-                  className="login-input server-url-input"
-                  placeholder="https://34-230-20-223.sslip.io/api/v1"
-                  value={apiBaseUrl}
-                  onChange={(e) => setApiBaseUrlState(e.target.value)}
-                  autoComplete="url"
-                />
-              </div>
+            {/* Collapsed Server Settings: No raw IP note shown by default */}
+            <div className="server-settings-toggle-row">
+              <button
+                type="button"
+                className="btn-link-server-toggle"
+                onClick={() => setShowAdvancedServer(!showAdvancedServer)}
+              >
+                {showAdvancedServer ? "✕ Hide Server Endpoint" : "⚙ Advanced: Server Endpoint"}
+              </button>
             </div>
+
+            {showAdvancedServer && (
+              <div className="form-group server-url-group animate-fade-in">
+                <label className="form-label">Server Endpoint</label>
+                <div className="input-group modern-input-group">
+                  <Wifi size={17} className="input-icon" />
+                  <input
+                    type="url"
+                    required
+                    className="login-input server-url-input"
+                    placeholder="https://server.domain/api/v1"
+                    value={apiBaseUrl}
+                    onChange={(e) => setApiBaseUrlState(e.target.value)}
+                    autoComplete="url"
+                  />
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -215,12 +241,12 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
               {loading ? (
                 <>
                   <Loader2 size={18} className="spin" />
-                  <span>Signing In...</span>
+                  <span>Verifying Admin Access...</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck size={18} />
-                  <span>Sign In to Sahayog HR</span>
+                  <span>Sign In to Admin Portal</span>
                   <ArrowRight size={18} className="submit-arrow" />
                 </>
               )}
