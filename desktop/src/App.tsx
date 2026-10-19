@@ -8,7 +8,7 @@ import { AttendanceView } from "./components/AttendanceView";
 import { LeaveView } from "./components/LeaveView";
 import { PayrollView } from "./components/PayrollView";
 import { OperationsView } from "./components/OperationsView";
-import { Users, Clock, Calendar, Banknote, Briefcase, Building2, LogOut, Bell, Settings } from "lucide-react";
+import { Users, Clock, Calendar, Banknote, Briefcase, Building2, LogOut, Bell, Settings, RefreshCw } from "lucide-react";
 import { SahayogLogo } from "./components/SahayogLogo";
 import { UpdateNotification } from "./components/UpdateNotification";
 import { isOfflineMode, setOfflineMode } from "./api/client";
@@ -172,6 +172,13 @@ export const App: React.FC = () => {
                 Standalone Mode
               </span>
             )}
+            <button
+              className="icon-btn"
+              title="Check for App Updates"
+              onClick={() => window.dispatchEvent(new CustomEvent("sahayog:check-update"))}
+            >
+              <RefreshCw size={17} />
+            </button>
             <button className="icon-btn" title="Notifications">
               <Bell size={18} />
             </button>
