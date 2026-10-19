@@ -2,7 +2,9 @@ package com.sahayog.hr;
 
 import android.os.Bundle;
 import android.view.View;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -10,9 +12,15 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Fix for Android/Capacitor double-padding bug with keyboard & system insets:
-        // Prevents the WebView parent CoordinatorLayout from applying conflicting insets
-        // that cause a large black/blank dead space above the software keyboard.
+        // Prevent Android & Capacitor from applying redundant bottom IME padding
+        // when windowSoftInputMode="adjustResize" is active.
+        View decorView = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decorView, (v, insets) -> {
+            Insets sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(sysBars.left, sysBars.top, sysBars.right, 0);
+            return insets;
+        });
+
         getBridge().getWebView().post(() -> {
             View parent = (View) getBridge().getWebView().getParent();
             if (parent != null) {

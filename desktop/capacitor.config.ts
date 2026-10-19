@@ -9,10 +9,6 @@ const config: CapacitorConfig = {
     cleartext: true, // Allows HTTP connection to local dev backend on Android
   },
   plugins: {
-    Keyboard: {
-      resize: "body",
-      resizeOnFullScreen: false,
-    },
     SystemBars: {
       insetsHandling: "disable",
     },
