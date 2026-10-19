@@ -34,12 +34,6 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
     onLoginSuccess(demoUser);
   };
 
-  const handleQuickFill = (userEmail: string, pass: string) => {
-    setEmail(userEmail);
-    setPassword(pass);
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -157,32 +151,6 @@ export const LoginScreen: React.FC<LoginProps> = ({ onLoginSuccess, onViewLandin
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="login-form animate-fade-in">
-            {/* Quick Demo Pre-fills */}
-            <div className="quick-demo-row">
-              <span className="quick-demo-label">Quick Demo:</span>
-              <button
-                type="button"
-                className="demo-pill"
-                onClick={() => handleQuickFill("admin@sahayog.local", "Admin@12345")}
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                className="demo-pill"
-                onClick={() => handleQuickFill("hr@sahayog.local", "Hr@12345")}
-              >
-                HR Lead
-              </button>
-              <button
-                type="button"
-                className="demo-pill"
-                onClick={() => handleQuickFill("emp@sahayog.local", "Emp@12345")}
-              >
-                Staff
-              </button>
-            </div>
-
             <div className="form-group">
               <label className="form-label">Work Email</label>
               <div className="input-group modern-input-group">

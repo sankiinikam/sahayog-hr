@@ -145,35 +145,39 @@ export const App: React.FC = () => {
         <header className="top-bar">
           <div className="top-title">
             {selectedEmployee ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="breadcrumb-title">
                 <span
-                  style={{ color: "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 500 }}
+                  className="breadcrumb-link"
                   onClick={() => setSelectedEmployee(null)}
                 >
-                  Employees
+                  Staff
                 </span>
-                <span style={{ color: "#94a3b8" }}>›</span>
-                {selectedEmployee.first_name} {selectedEmployee.last_name}
+                <span className="breadcrumb-sep">›</span>
+                <span className="breadcrumb-current">
+                  {selectedEmployee.first_name} {selectedEmployee.last_name}
+                </span>
               </span>
-            ) : currentTab === "attendance" ? (
-              "Attendance & Shift Management"
-            ) : currentTab === "leave" ? (
-              "Leave Management & Time Off"
-            ) : currentTab === "payroll" ? (
-              "Payroll & Statutory Compensation"
-            ) : currentTab === "operations" ? (
-              "Operations & Asset Management"
-            ) : currentTab === "company" ? (
-              "Company Profile & Structure"
             ) : (
-              "Sahayog HR — Workforce Directory"
+              <span className="screen-title">
+                {currentTab === "attendance"
+                  ? "Attendance & Shifts"
+                  : currentTab === "leave"
+                  ? "Leave & Time Off"
+                  : currentTab === "payroll"
+                  ? "Payroll & Payslips"
+                  : currentTab === "operations"
+                  ? "Operations"
+                  : currentTab === "company"
+                  ? "Company Profile"
+                  : "Staff Directory"}
+              </span>
             )}
           </div>
           <div className="top-actions">
             {isOfflineMode() && (
-              <span className="offline-badge-pill" title="Running in Standalone Offline Mode using device storage">
+              <span className="offline-badge-pill" title="Standalone Offline Mode">
                 <span className="dot dot-active" />
-                Standalone Mode
+                Offline
               </span>
             )}
             <button
@@ -181,16 +185,16 @@ export const App: React.FC = () => {
               title="Check for App Updates"
               onClick={() => window.dispatchEvent(new CustomEvent("sahayog:check-update"))}
             >
-              <RefreshCw size={17} />
+              <RefreshCw size={16} />
             </button>
-            <button className="icon-btn" title="Notifications">
-              <Bell size={18} />
+            <button className="icon-btn desktop-only-action" title="Notifications">
+              <Bell size={17} />
             </button>
-            <button className="icon-btn" title="Settings">
-              <Settings size={18} />
+            <button className="icon-btn desktop-only-action" title="Settings">
+              <Settings size={17} />
             </button>
             <button className="icon-btn mobile-only-logout" onClick={handleLogout} title="Log Out">
-              <LogOut size={18} />
+              <LogOut size={16} />
             </button>
           </div>
         </header>

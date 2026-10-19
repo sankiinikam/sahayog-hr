@@ -375,27 +375,44 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
   return (
     <div className="directory-container animate-fade-in">
       {/* Page Header */}
-      <div className="page-header modern-page-header">
-        <div>
-          <h1>Employee Directory</h1>
-          <p>{employees.length} total staff · {activeCount} active · 12-Hour Standard Shift Mode</p>
-        </div>
-        <div className="page-header-actions">
-          <div className="search-bar">
-            <Search size={15} color="#94a3b8" />
-            <input
-              placeholder="Search by name, code…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+      <div className="directory-top-bar">
+        <div className="directory-title-area">
+          <div className="directory-title-row">
+            <h2>Staff Directory</h2>
+            <span className="directory-count-pill">{activeCount} active</span>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => { fetchEmployees(); fetchTodayAttendance(); }} title="Refresh">
-            <RefreshCw size={14} />
+          <p className="directory-sub">{employees.length} total staff • 12h Shift System</p>
+        </div>
+        <div className="directory-btn-group">
+          <button
+            className="icon-btn-refresh"
+            onClick={() => { fetchEmployees(); fetchTodayAttendance(); }}
+            title="Refresh"
+          >
+            <RefreshCw size={15} />
           </button>
-          <button className="btn btn-primary" onClick={handleOpenAddModal}>
-            <Plus size={16} /> Add Employee
+          <button
+            className="btn-add-staff-header"
+            onClick={handleOpenAddModal}
+          >
+            <Plus size={16} />
+            <span>Add Staff</span>
           </button>
         </div>
+      </div>
+
+      {/* Full-width Search Bar */}
+      <div className="directory-search-wrapper">
+        <Search size={16} className="search-icon" />
+        <input
+          placeholder="Search by employee name or code…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="directory-search-input"
+        />
+        {search && (
+          <button className="search-clear-btn" onClick={() => setSearch("")}>✕</button>
+        )}
       </div>
 
       {/* Quick Filter Chips */}
@@ -571,15 +588,6 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
           })}
         </div>
       )}
-
-      {/* Mobile Floating Action Button (FAB) for Add Employee */}
-      <button
-        className="mobile-fab-add"
-        onClick={handleOpenAddModal}
-        title="Add New Employee"
-      >
-        <Plus size={22} />
-      </button>
 
       {/* Add Employee Modal (Includes Photo Upload) */}
       {showAddModal && (
