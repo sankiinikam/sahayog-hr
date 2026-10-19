@@ -1,7 +1,6 @@
-{$DOMAIN} {
+34-230-20-223.sslip.io {
     encode zstd gzip
 
-    # Proxy Django API, Admin, Static, and Media to backend
     handle /api/* {
         reverse_proxy api:8000
     }
@@ -15,7 +14,6 @@
         reverse_proxy api:8000
     }
 
-    # Serve React Single Page Application for all web routes
     handle {
         root * /srv
         try_files {path} /index.html

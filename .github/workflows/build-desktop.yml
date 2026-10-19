@@ -52,6 +52,5 @@ jobs:
           gh release create $tag --target $env:GITHUB_SHA --title "Sahayog HR — Latest build" --notes "Latest downloadable Windows and Android builds."
           if ($LASTEXITCODE -ne 0) { Write-Host "The latest release already exists." }
           $installer = Get-ChildItem "desktop/release/*.exe" | Select-Object -First 1
-          if (-not $installer) { throw "Windows installer was not found." }
-          gh release upload $tag "$($installer.FullName)#Sahayog-HR-Windows-Setup.exe" --clobber
+          gh release upload $tag "$($installer.FullName)#Sahayog-HR-Windows-Setup.exe" "$($installer.FullName)#Sahayog.HR.Setup.1.0.0.exe" --clobber
 
