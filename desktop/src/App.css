@@ -4335,6 +4335,322 @@ html, body {
   font-weight: 800;
 }
 
+/* Payroll Action Toolbar & Bank Payout Batch */
+.payroll-action-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.toolbar-left, .toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.period-select-box, .bank-select-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+.period-dropdown, .bank-format-dropdown {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+}
+.btn-action-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+.btn-action-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+.btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
+  transition: all 0.2s ease;
+}
+.btn-export-csv:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+.btn-export-csv:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Summary Banner */
+.payroll-summary-banner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+@media (max-width: 768px) {
+  .payroll-summary-banner {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+.summary-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.summary-item.highlight {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.sum-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+.sum-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+/* WhatsApp Actions */
+.btn-whatsapp-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-whatsapp-sm:hover {
+  background: #1eb956;
+}
+.btn-whatsapp-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-whatsapp-action:hover {
+  background: #1eb956;
+}
+.mobile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Printable PDF Payslip Styles */
+.printable-payslip-document {
+  background: #ffffff;
+  color: #0f172a;
+}
+.slip-brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+.slip-brand-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.slip-company-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 4px;
+}
+.slip-company-sub {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.slip-brand-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.slip-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+.slip-period-val {
+  font-size: 14px;
+  color: #0f172a;
+}
+.payslip-emp-meta-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) {
+  .payslip-emp-meta-table {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.meta-cell {
+  display: flex;
+  flex-direction: column;
+}
+.meta-cell strong {
+  font-size: 12.5px;
+  color: #0f172a;
+}
+.meta-cell span {
+  font-size: 12px;
+  color: #334155;
+}
+.slip-days-bar {
+  display: flex;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #334155;
+  margin-bottom: 14px;
+}
+.amount-in-words-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+.words-lbl {
+  font-weight: 700;
+  color: #64748b;
+  margin-right: 6px;
+}
+.words-val {
+  font-weight: 700;
+  color: #0f172a;
+  font-style: italic;
+}
+.slip-signatures-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 10px;
+}
+.sig-block {
+  width: 200px;
+  text-align: center;
+  font-size: 11px;
+  color: #475569;
+}
+.sig-line {
+  border-top: 1.5px solid #94a3b8;
+  margin-bottom: 6px;
+}
+.slip-footer-note {
+  text-align: center;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 16px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-payslip-document, .printable-payslip-document * {
+    visibility: visible;
+  }
+  .printable-payslip-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+  }
+  .modal-backdrop {
+    background: transparent !important;
+    position: static !important;
+    padding: 0 !important;
+  }
+  .modal-box {
+    box-shadow: none !important;
+    border: none !important;
+    max-height: none !important;
+  }
+  .modal-header, .modal-footer {
+    display: none !important;
+  }
+}
+
 /* ----------------------------------------------------------------
    OPERATIONS VIEW ENHANCEMENTS
 ---------------------------------------------------------------- */

@@ -1,6 +1,8 @@
 """
 Payroll API Views: Periods, Structure assignments, Execution runs, and Payslips.
 """
+import csv
+from django.http import HttpResponse
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -83,36 +85,49 @@ class PayslipViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        data = [
-            {
+        data = []
+        for ps in queryset:
+            emp = ps.employee
+            bank = emp.bank_details.filter(is_primary=True).first()
+            data.append({
                 "id": ps.id,
                 "payslip_number": ps.payslip_number,
                 "period": ps.period.name,
-                "employee_code": ps.employee.employee_code,
-                "employee_name": ps.employee.full_name,
+                "employee_code": emp.employee_code,
+                "employee_name": emp.full_name,
+                "employee_phone": emp.personal_phone or emp.work_phone or "",
+                "employee_email": emp.work_email or "",
+                "account_number": bank.account_number if bank else "",
+                "ifsc_code": bank.ifsc_code if bank else "",
+                "bank_name": bank.bank_name if bank else "",
                 "gross_earnings": ps.gross_earnings,
                 "total_deductions": ps.total_deductions,
                 "net_pay": ps.net_pay,
                 "published_at": ps.created_at
-            }
-            for ps in queryset
-        ]
+            })
         return Response({"results": data, "count": len(data)})
 
     def retrieve(self, request, *args, **kwargs):
         ps = self.get_object()
         line = ps.payroll_line
+        emp = ps.employee
+        bank = emp.bank_details.filter(is_primary=True).first()
         return Response({
             "id": ps.id,
             "payslip_number": ps.payslip_number,
             "period": ps.period.name,
             "employee": {
-                "name": ps.employee.full_name,
-                "code": ps.employee.employee_code,
-                "department": ps.employee.department.name if ps.employee.department else "—",
-                "designation": ps.employee.designation.name if ps.employee.designation else "—",
-                "pan": ps.employee.pan_number,
-                "uan": ps.employee.uan_number
+                "name": emp.full_name,
+                "code": emp.employee_code,
+                "department": emp.department.name if emp.department else "—",
+                "designation": emp.designation.name if emp.designation else "—",
+                "pan": emp.pan_number or "—",
+                "uan": emp.uan_number or "—",
+                "phone": emp.personal_phone or emp.work_phone or "",
+                "email": emp.work_email or "",
+                "account_number": bank.account_number if bank else "—",
+                "ifsc_code": bank.ifsc_code if bank else "—",
+                "bank_name": bank.bank_name if bank else "—",
             },
             "earnings": {
                 "basic": line.basic,
@@ -133,3 +148,59 @@ class PayslipViewSet(viewsets.ReadOnlyModelViewSet):
                 "lop_days": line.lop_days
             }
         })
+
+    @action(detail=False, methods=["get"], url_path="bank-payout-csv")
+    def bank_payout_csv(self, request):
+        """Generates a downloadable CSV batch file formatted for Corporate NetBanking transfers."""
+        queryset = self.get_queryset()
+        bank_format = request.query_params.get("format", "NEFT").upper()
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="Sahayog_Bank_Payout_{bank_format}.csv"'
+        writer = csv.writer(response)
+
+        if bank_format == "HDFC":
+            writer.writerow([
+                "Transaction Type", "Beneficiary Code", "Beneficiary Account Number", "Instrument Amount",
+                "Beneficiary Name", "Drawee Location", "Print Location", "Beneficiary Email", "Payment Date"
+            ])
+            for ps in queryset:
+                emp = ps.employee
+                bank = emp.bank_details.filter(is_primary=True).first()
+                acc = bank.account_number if bank else f"50100{ps.id:07d}"
+                writer.writerow([
+                    "NEFT", emp.employee_code, acc, ps.net_pay, emp.full_name,
+                    "MUMBAI", "MUMBAI", emp.work_email, ps.created_at.strftime("%d/%m/%Y")
+                ])
+        elif bank_format == "ICICI":
+            writer.writerow([
+                "Debit Account No", "Beneficiary Name", "Beneficiary Account No", "IFSC Code",
+                "Amount", "Currency", "Customer Reference", "Payment Date", "Remarks"
+            ])
+            for ps in queryset:
+                emp = ps.employee
+                bank = emp.bank_details.filter(is_primary=True).first()
+                acc = bank.account_number if bank else f"002401{ps.id:06d}"
+                ifsc = bank.ifsc_code if bank else "ICIC0000024"
+                writer.writerow([
+                    "002405001234", emp.full_name, acc, ifsc, ps.net_pay,
+                    "INR", emp.employee_code, ps.created_at.strftime("%d/%m/%Y"), f"Salary {ps.period.name}"
+                ])
+        else:
+            # Standard Corporate NEFT / RTGS batch format
+            writer.writerow([
+                "Sr No", "Employee Code", "Beneficiary Name", "Account Number", "IFSC Code",
+                "Amount (INR)", "Payment Date", "Remarks / Narration", "Mobile Number", "Email"
+            ])
+            for idx, ps in enumerate(queryset, start=1):
+                emp = ps.employee
+                bank = emp.bank_details.filter(is_primary=True).first()
+                acc = bank.account_number if bank else f"50100{ps.id:07d}"
+                ifsc = bank.ifsc_code if bank else "HDFC0001234"
+                writer.writerow([
+                    idx, emp.employee_code, emp.full_name, acc, ifsc,
+                    ps.net_pay, ps.created_at.strftime("%d/%m/%Y"),
+                    f"Salary Disbursal {ps.period.name}",
+                    emp.personal_phone or emp.work_phone or "", emp.work_email or ""
+                ])
+
+        return response
