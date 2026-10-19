@@ -4,7 +4,7 @@ import { isOfflineMode, setOfflineMode, handleOfflineRequest } from "./offlineSt
 export { isOfflineMode, setOfflineMode };
 
 export const getApiBaseUrl = (): string => {
-  return localStorage.getItem("hrms_api_url") || (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  return localStorage.getItem("hrms_api_url") || (import.meta as any).env?.VITE_API_BASE_URL || "https://34-230-20-223.sslip.io/api/v1";
 };
 
 export const setApiBaseUrl = (value: string): void => {
