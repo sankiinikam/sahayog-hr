@@ -1,5 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { ArrowLeft, RefreshCw, Edit2, Check, Upload, Trash2, User, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Edit2,
+  Check,
+  Upload,
+  Trash2,
+  User,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  RotateCcw
+} from "lucide-react";
 import { AttendanceLogger } from "./AttendanceLogger";
 import { OvertimeTracker } from "./OvertimeTracker";
 import { PayslipCalculator } from "./PayslipCalculator";
@@ -22,6 +34,14 @@ interface EmployeeProfile {
   date_of_birth: string | null;
   date_of_joining: string;
   is_active: boolean;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  id_proof_type?: string;
+  id_proof_number?: string;
+  aadhaar_number?: string;
+  pan_number?: string;
+  department?: { id: number | null; name: string };
+  designation?: { id: number | null; name: string };
   photo?: string;
   stats_30d: { present: number; half_day: number; absent: number; on_leave: number };
   available_shifts: Shift[];
@@ -63,6 +83,7 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
@@ -84,9 +105,12 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
     work_email: "",
     employee_code: "",
     date_of_joining: "",
+    date_of_birth: "",
+    designation: "",
+    id_proof_type: "Aadhaar",
+    id_proof_number: "",
     personal_phone: "",
     personal_email: "",
-    is_active: true,
     photo: "",
   });
 
@@ -177,9 +201,12 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
       work_email: profile.work_email || "",
       employee_code: profile.employee_code || "",
       date_of_joining: profile.date_of_joining || "",
-      personal_phone: profile.personal_phone || "",
+      date_of_birth: profile.date_of_birth || "",
+      designation: profile.designation?.name || "",
+      id_proof_type: profile.id_proof_type || "Aadhaar",
+      id_proof_number: profile.id_proof_number || profile.aadhaar_number || profile.pan_number || "",
+      personal_phone: profile.personal_phone || profile.work_phone || "",
       personal_email: profile.personal_email || "",
-      is_active: profile.is_active ?? true,
       photo: profile.photo || "",
     });
     setShowEditModal(true);
@@ -220,6 +247,35 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      await apiClient.delete(`/employees/${profile.id}/`);
+      showToast(`Employee ${profile.full_name} archived. Records preserved in database.`);
+      setShowDeleteModal(false);
+      fetchProfile();
+    } catch (e: any) {
+      showToast(`Failed to archive employee: ${formatApiError(e)}`, "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRestoreEmployee = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      await apiClient.post(`/employees/${profile.id}/restore/`);
+      showToast(`Restored ${profile.full_name} to active employees.`);
+      fetchProfile();
+    } catch (e: any) {
+      showToast(`Failed to restore: ${formatApiError(e)}`, "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-spinner">
@@ -247,6 +303,24 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
 
   return (
     <div>
+      {/* Banner if employee is archived/deleted */}
+      {profile.is_deleted && (
+        <div className="deleted-view-banner" style={{ marginBottom: 16 }}>
+          <AlertCircle size={18} color="#dc2626" />
+          <span>
+            <strong>Archived Staff Record:</strong> This employee has been soft-deleted and removed from the active directory. All historical attendance logs, payroll calculations, and records are safely preserved in the database.
+          </span>
+          <button
+            className="btn btn-sm btn-success"
+            onClick={handleRestoreEmployee}
+            disabled={saving}
+            style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <RotateCcw size={13} /> Restore Employee
+          </button>
+        </div>
+      )}
+
       {/* Profile Header */}
       <div className="profile-header">
         <button className="profile-back-btn" onClick={onBack}>
@@ -266,37 +340,79 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
           <div className="profile-name">{profile.full_name}</div>
           <div className="profile-tags">
             <span className="profile-tag saffron">ID: {profile.employee_code}</span>
-            {profile.is_active
-              ? <span className="profile-tag green">● Active</span>
-              : <span className="profile-tag gray">● Inactive</span>
-            }
+            {profile.is_deleted ? (
+              <span className="profile-tag red">● Archived / Deleted</span>
+            ) : profile.is_active ? (
+              <span className="profile-tag green">● Active</span>
+            ) : (
+              <span className="profile-tag gray">● Inactive</span>
+            )}
           </div>
         </div>
 
-        {/* Quick Info Grid */}
+        {/* Quick Info Grid — Designation, Contact, DOB, ID Proof */}
         <div className="profile-meta">
           <div className="profile-meta-item">
-            <div className="meta-label">Work Email</div>
-            <div className="meta-value" style={{ fontSize: 11 }}>{profile.work_email}</div>
+            <div className="meta-label">Designation</div>
+            <div className="meta-value" style={{ fontWeight: 600 }}>
+              {profile.designation?.name || "Staff Member"}
+            </div>
           </div>
           <div className="profile-meta-item">
-            <div className="meta-label">Phone</div>
+            <div className="meta-label">Contact Number</div>
             <div className="meta-value">{profile.personal_phone || profile.work_phone || "—"}</div>
+          </div>
+          <div className="profile-meta-item">
+            <div className="meta-label">Date of Birth</div>
+            <div className="meta-value">{profile.date_of_birth || "—"}</div>
+          </div>
+          <div className="profile-meta-item">
+            <div className="meta-label">ID Proof ({profile.id_proof_type || "Aadhaar"})</div>
+            <div className="meta-value" style={{ fontFamily: "monospace" }}>
+              {profile.id_proof_number || profile.aadhaar_number || profile.pan_number || "—"}
+            </div>
           </div>
           <div className="profile-meta-item">
             <div className="meta-label">Joined</div>
             <div className="meta-value">{profile.date_of_joining}</div>
           </div>
+          <div className="profile-meta-item">
+            <div className="meta-label">Work Email</div>
+            <div className="meta-value" style={{ fontSize: 11 }}>{profile.work_email}</div>
+          </div>
         </div>
 
-        {/* Edit Profile Button */}
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={handleOpenEdit}
-          style={{ background: "rgba(255,255,255,0.12)", color: "#fff", borderColor: "rgba(255,255,255,0.25)" }}
-        >
-          <Edit2 size={14} /> Edit Profile
-        </button>
+        {/* Profile Header Action Buttons */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleOpenEdit}
+            style={{ background: "rgba(255,255,255,0.12)", color: "#fff", borderColor: "rgba(255,255,255,0.25)" }}
+          >
+            <Edit2 size={14} /> Edit Profile
+          </button>
+
+          {!profile.is_deleted ? (
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => setShowDeleteModal(true)}
+              style={{ background: "#dc2626", color: "#fff", borderColor: "#b91c1c" }}
+              title="Soft-delete employee and archive in database"
+            >
+              <Trash2 size={14} /> Delete Employee
+            </button>
+          ) : (
+            <button
+              className="btn btn-success btn-sm"
+              onClick={handleRestoreEmployee}
+              disabled={saving}
+              style={{ background: "#16a34a", color: "#fff", borderColor: "#15803d" }}
+              title="Restore to active directory"
+            >
+              <RotateCcw size={14} /> Restore
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 30-Day Stats */}
@@ -578,13 +694,63 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
                 </div>
               </div>
 
+              {/* Designation & Contact Phone */}
               <div className="form-grid-2">
                 <div className="form-row">
-                  <label className="form-label">Personal Phone</label>
+                  <label className="form-label">Designation</label>
+                  <input
+                    className="form-control"
+                    value={editForm.designation}
+                    onChange={e => setEditForm(f => ({ ...f, designation: e.target.value }))}
+                    placeholder="e.g. Senior Software Engineer"
+                  />
+                </div>
+                <div className="form-row">
+                  <label className="form-label">Contact Number</label>
                   <input
                     className="form-control"
                     value={editForm.personal_phone}
                     onChange={e => setEditForm(f => ({ ...f, personal_phone: e.target.value }))}
+                    placeholder="+91 98221 11223"
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth & ID Proof */}
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">Date of Birth (DOB)</label>
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={editForm.date_of_birth}
+                    onChange={e => setEditForm(f => ({ ...f, date_of_birth: e.target.value }))}
+                  />
+                </div>
+                <div className="form-row">
+                  <label className="form-label">ID Proof Type</label>
+                  <select
+                    className="form-control"
+                    value={editForm.id_proof_type}
+                    onChange={e => setEditForm(f => ({ ...f, id_proof_type: e.target.value }))}
+                  >
+                    <option value="Aadhaar">Aadhaar Card</option>
+                    <option value="PAN">PAN Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Voter ID">Voter ID</option>
+                    <option value="Driving License">Driving License</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">ID Proof Number</label>
+                  <input
+                    className="form-control"
+                    value={editForm.id_proof_number}
+                    onChange={e => setEditForm(f => ({ ...f, id_proof_number: e.target.value }))}
+                    placeholder="XXXX-XXXX-XXXX or PAN"
                   />
                 </div>
                 <div className="form-row">
@@ -597,30 +763,6 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
                   />
                 </div>
               </div>
-
-              <div className="form-row" style={{ marginTop: 8 }}>
-                <label className="form-label">Employment Status</label>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5 }}>
-                    <input
-                      type="radio"
-                      name="profile_is_active"
-                      checked={editForm.is_active === true}
-                      onChange={() => setEditForm(f => ({ ...f, is_active: true }))}
-                    />
-                    Active
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5 }}>
-                    <input
-                      type="radio"
-                      name="profile_is_active"
-                      checked={editForm.is_active === false}
-                      onChange={() => setEditForm(f => ({ ...f, is_active: false }))}
-                    />
-                    Inactive
-                  </label>
-                </div>
-              </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
@@ -628,6 +770,40 @@ export const AdminEmployeeProfile: React.FC<Props> = ({ employeeId, onBack }) =>
               </button>
               <button className="btn btn-primary" onClick={handleSaveEdit} disabled={saving}>
                 <Check size={15} /> {saving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) setShowDeleteModal(false); }}>
+          <div className="modal-box modal-box-confirm">
+            <div className="modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Trash2 size={18} color="#dc2626" />
+                <h3>Delete Employee — {profile.full_name}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 14, color: "#1e293b", lineHeight: 1.5 }}>
+                Are you sure you want to delete / archive <strong>{profile.full_name}</strong> (Code: <code>{profile.employee_code}</code>)?
+              </p>
+              <div className="archive-info-box" style={{ marginTop: 12 }}>
+                <AlertCircle size={16} color="#d97706" />
+                <div style={{ fontSize: 12.5, color: "#92400e" }}>
+                  <strong>Soft-Delete Guarantee:</strong> This employee will be removed from the active roster, but their record, punches, payslips, and attendance history will remain completely intact in the database. You can view or restore this employee at any time from the Staff Directory by checking <em>"Show Deleted Users"</em>.
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleConfirmDelete} disabled={saving}>
+                <Trash2 size={14} /> {saving ? "Deleting…" : "Confirm Delete"}
               </button>
             </div>
           </div>

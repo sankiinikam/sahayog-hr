@@ -114,6 +114,35 @@ class TestAttendanceEngine:
         assert record.first_in is not None
         assert record.last_out is not None
 
+    def test_attendance_late_marker_and_batch_mark(self, api_client, manager_user, employee):
+        api_client.force_authenticate(user=manager_user)
+        test_date = "2026-10-22"
+
+        # 1. Test marking with late flag
+        res = api_client.post("/api/v1/attendance/records/", {
+            "employee_id": employee.id,
+            "attendance_date": test_date,
+            "status": "PRESENT",
+            "first_in": "09:45:00",
+            "last_out": "20:00:00",
+            "is_late": True,
+            "late_minutes": 45
+        })
+        assert res.status_code == status.HTTP_201_CREATED
+        assert res.data["is_late"] is True
+        assert res.data["late_minutes"] == 45
+
+        # 2. Test batch marking
+        batch_res = api_client.post("/api/v1/attendance/records/batch-mark/", {
+            "employee_ids": [employee.id],
+            "attendance_date": "2026-10-23",
+            "status": "PRESENT"
+        })
+        assert batch_res.status_code == status.HTTP_200_OK
+        rec2 = AttendanceRecord.objects.get(employee=employee, attendance_date="2026-10-23")
+        assert rec2.status == "PRESENT"
+
+
 
 @pytest.mark.django_db
 class TestLeaveEngine:

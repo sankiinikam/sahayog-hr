@@ -61,7 +61,11 @@ class Employee(TimeStampedModel, SoftDeleteModel):
     aadhaar_number = models.CharField(max_length=20, blank=True)
     uan_number = models.CharField(max_length=30, blank=True)
     esi_number = models.CharField(max_length=30, blank=True)
+    id_proof_type = models.CharField(max_length=50, blank=True, default="Aadhaar")
+    id_proof_number = models.CharField(max_length=50, blank=True, default="")
     photo = models.TextField(blank=True, default="")
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "emp_employee"

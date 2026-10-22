@@ -141,3 +141,64 @@ class TestEmployeeAPI:
         # Employee querying another employee's detailed record receives 404 because get_queryset isolates it
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_hr_can_create_employee_with_dob_id_proof_and_designation(self, api_client, hr_user, company, department):
+        api_client.force_authenticate(user=hr_user)
+        response = api_client.post("/api/v1/employees/", {
+            "company": company.id,
+            "department": department.id,
+            "designation": "Operations Lead",
+            "employee_code": "EMP005",
+            "first_name": "Karan",
+            "last_name": "Patil",
+            "work_email": "karan.patil@test.com",
+            "date_of_joining": "2026-03-01",
+            "date_of_birth": "1995-07-15",
+            "id_proof_type": "Aadhaar",
+            "id_proof_number": "1234-5678-9012",
+            "personal_phone": "+91 98220 99887"
+        })
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["date_of_birth"] == "1995-07-15"
+        assert response.data["personal_phone"] == "+91 98220 99887"
+        assert response.data["is_deleted"] is False
+
+    def test_admin_soft_delete_and_restore_employee(self, api_client, hr_user, company, department, designation):
+        emp = Employee.objects.create(
+            company=company,
+            department=department,
+            designation=designation,
+            employee_code="EMP006",
+            first_name="Rohan",
+            last_name="Mehta",
+            work_email="rohan@test.com",
+            date_of_joining="2026-01-01"
+        )
+        api_client.force_authenticate(user=hr_user)
+
+        # 1. Soft delete
+        del_res = api_client.delete(f"/api/v1/employees/{emp.id}/")
+        assert del_res.status_code == status.HTTP_200_OK
+        emp.refresh_from_db()
+        assert emp.is_deleted is True
+        assert emp.is_active is False
+        assert emp.deleted_at is not None
+
+        # 2. Hidden by default in listing
+        list_res = api_client.get("/api/v1/employees/")
+        codes = [e["employee_code"] for e in (list_res.data if isinstance(list_res.data, list) else list_res.data.get("results", []))]
+        assert "EMP006" not in codes
+
+        # 3. Shown when show_deleted=true
+        deleted_list_res = api_client.get("/api/v1/employees/?show_deleted=true")
+        del_codes = [e["employee_code"] for e in (deleted_list_res.data if isinstance(deleted_list_res.data, list) else deleted_list_res.data.get("results", []))]
+        assert "EMP006" in del_codes
+
+        # 4. Restore employee
+        restore_res = api_client.post(f"/api/v1/employees/{emp.id}/restore/")
+        assert restore_res.status_code == status.HTTP_200_OK
+        emp.refresh_from_db()
+        assert emp.is_deleted is False
+        assert emp.is_active is True
+        assert emp.deleted_at is None
+
+

@@ -12,7 +12,7 @@ interface ReleaseInfo {
 }
 
 // Build timestamp updated with every release
-const CURRENT_BUILD_TIME = "2026-10-19T20:23:00Z";
+const CURRENT_BUILD_TIME = "2026-10-22T17:00:00Z";
 const GITHUB_REPO = "sankiinikam/sahayog-hr";
 
 export const UpdateNotification: React.FC = () => {

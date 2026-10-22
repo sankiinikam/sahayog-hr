@@ -1,20 +1,47 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Users, Plus, Search, ChevronRight, RefreshCw, Edit2, Check, Upload, Trash2, User } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Search,
+  ChevronRight,
+  RefreshCw,
+  Edit2,
+  Check,
+  Upload,
+  Trash2,
+  User,
+  Phone,
+  Briefcase,
+  RotateCcw,
+  Calendar,
+  CreditCard,
+  AlertCircle
+} from "lucide-react";
 import { apiClient } from "../api/client";
-import { Time12Input } from "./Time12Input";
-import { to12Hour, computeShiftAttendance, getLocalDateString } from "../utils/timeFormat";
 import { formatApiError } from "../utils/formatError";
+import { getLocalDateString } from "../utils/timeFormat";
 
 export interface Employee {
   id: number;
   employee_code: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
   work_email: string;
   personal_email?: string;
   personal_phone?: string;
   work_phone?: string;
+  designation?: number | string | null;
+  designation_name?: string;
+  designation_title?: string;
+  date_of_birth?: string | null;
+  id_proof_type?: string;
+  id_proof_number?: string;
+  aadhaar_number?: string;
+  pan_number?: string;
   is_active: boolean;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
   date_of_joining: string;
   photo?: string;
 }
@@ -24,19 +51,13 @@ interface Company {
   name: string;
 }
 
-interface Props {
-  onSelectEmployee: (emp: Employee) => void;
+interface DesignationOption {
+  id: number;
+  name: string;
 }
 
-interface TodayAttendance {
-  id?: number;
-  status: "PRESENT" | "ABSENT" | "HALF_DAY" | "ON_LEAVE" | "MISSED_PUNCH" | string;
-  first_in: string | null;
-  last_out: string | null;
-  worked_minutes: number;
-  overtime_minutes: number;
-  clockIn12: string;
-  clockOut12: string;
+interface Props {
+  onSelectEmployee: (emp: Employee) => void;
 }
 
 const initials = (emp: Employee) =>
@@ -46,42 +67,49 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showDeleted, setShowDeleted] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [designations, setDesignations] = useState<DesignationOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
   const addPhotoInputRef = useRef<HTMLInputElement>(null);
   const editPhotoInputRef = useRef<HTMLInputElement>(null);
 
-  // Today's date for attendance marking (local timezone)
   const todayDate = getLocalDateString();
-  const [attendanceMap, setAttendanceMap] = useState<Record<number, TodayAttendance>>({});
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "PRESENT" | "ABSENT">("ALL");
 
-  // Clean Add Employee form with photo
+  // Add Employee Form State
   const [addForm, setAddForm] = useState({
     first_name: "",
     last_name: "",
     work_email: "",
     employee_code: "",
     date_of_joining: todayDate,
+    date_of_birth: "",
+    designation: "",
+    id_proof_type: "Aadhaar",
+    id_proof_number: "",
     personal_phone: "",
     personal_email: "",
     photo: "",
   });
 
-  // Edit Employee form with photo
+  // Edit Employee Form State
   const [editForm, setEditForm] = useState({
     first_name: "",
     last_name: "",
     work_email: "",
     employee_code: "",
     date_of_joining: "",
+    date_of_birth: "",
+    designation: "",
+    id_proof_type: "Aadhaar",
+    id_proof_number: "",
     personal_phone: "",
     personal_email: "",
-    is_active: true,
     photo: "",
   });
 
@@ -90,33 +118,11 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchTodayAttendance = useCallback(async () => {
-    try {
-      const res = await apiClient.get(`/attendance/records/?date_from=${todayDate}&date_to=${todayDate}`);
-      const list = Array.isArray(res.data) ? res.data : res.data?.results ?? [];
-      const map: Record<number, TodayAttendance> = {};
-      list.forEach((r: any) => {
-        map[r.employee_id] = {
-          id: r.id,
-          status: r.status,
-          first_in: r.first_in,
-          last_out: r.last_out,
-          worked_minutes: r.worked_minutes || 0,
-          overtime_minutes: r.overtime_minutes || 0,
-          clockIn12: to12Hour(r.first_in || "08:00:00"),
-          clockOut12: to12Hour(r.last_out || "20:00:00"),
-        };
-      });
-      setAttendanceMap(map);
-    } catch {
-      // ignore
-    }
-  }, [todayDate]);
-
   const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get("/employees/");
+      // Pass show_deleted=true so we know about both active and soft-deleted records
+      const res = await apiClient.get("/employees/?show_deleted=true");
       const data = res.data;
       const list = Array.isArray(data) ? data : data.results ?? [];
       setEmployees(list);
@@ -127,11 +133,20 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     }
   }, []);
 
-  const fetchCompanies = useCallback(async () => {
+  const fetchMetadata = useCallback(async () => {
     try {
-      const compRes = await apiClient.get("/organization/companies/");
-      const comps = Array.isArray(compRes.data) ? compRes.data : compRes.data?.results ?? [];
-      setCompanies(comps);
+      const [compRes, desigRes] = await Promise.allSettled([
+        apiClient.get("/organization/companies/"),
+        apiClient.get("/organization/designations/"),
+      ]);
+      if (compRes.status === "fulfilled") {
+        const comps = Array.isArray(compRes.value.data) ? compRes.value.data : compRes.value.data?.results ?? [];
+        setCompanies(comps);
+      }
+      if (desigRes.status === "fulfilled") {
+        const desigs = Array.isArray(desigRes.value.data) ? desigRes.value.data : desigRes.value.data?.results ?? [];
+        setDesignations(desigs);
+      }
     } catch {
       // ignore
     }
@@ -139,123 +154,10 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
 
   useEffect(() => {
     fetchEmployees();
-    fetchCompanies();
-    fetchTodayAttendance();
-  }, [fetchEmployees, fetchCompanies, fetchTodayAttendance]);
+    fetchMetadata();
+  }, [fetchEmployees, fetchMetadata]);
 
-  // Attendance Actions on Profile Bar
-  const handleMarkPresent = async (empId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const existing = attendanceMap[empId];
-    const clockIn12 = existing?.clockIn12 || "08:00 AM";
-    const clockOut12 = existing?.clockOut12 || "08:00 PM";
-    const { workedMinutes, overtimeMinutes, firstIn24, lastOut24 } = computeShiftAttendance(clockIn12, clockOut12);
-
-    // Optimistic UI update
-    setAttendanceMap(prev => ({
-      ...prev,
-      [empId]: {
-        ...prev[empId],
-        status: "PRESENT",
-        first_in: firstIn24,
-        last_out: lastOut24,
-        clockIn12,
-        clockOut12,
-        worked_minutes: workedMinutes,
-        overtime_minutes: overtimeMinutes,
-      }
-    }));
-
-    try {
-      const res = await apiClient.post("/attendance/records/", {
-        employee_id: empId,
-        attendance_date: todayDate,
-        status: "PRESENT",
-        first_in: firstIn24,
-        last_out: lastOut24,
-        overtime_minutes: overtimeMinutes,
-      });
-      if (res.data?.id) {
-        setAttendanceMap(prev => ({
-          ...prev,
-          [empId]: {
-            ...prev[empId],
-            id: res.data.id,
-            worked_minutes: res.data.worked_minutes,
-            overtime_minutes: res.data.overtime_minutes,
-          }
-        }));
-      }
-      showToast("Marked Present (12h Shift)");
-    } catch {
-      showToast("Failed to record attendance", "error");
-    }
-  };
-
-  const handleMarkAbsent = async (empId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Optimistic UI update
-    setAttendanceMap(prev => ({
-      ...prev,
-      [empId]: {
-        ...prev[empId],
-        status: "ABSENT",
-        first_in: null,
-        last_out: null,
-        clockIn12: "08:00 AM",
-        clockOut12: "08:00 PM",
-        worked_minutes: 0,
-        overtime_minutes: 0,
-      }
-    }));
-
-    try {
-      await apiClient.post("/attendance/records/", {
-        employee_id: empId,
-        attendance_date: todayDate,
-        status: "ABSENT",
-        first_in: null,
-        last_out: null,
-        overtime_minutes: 0,
-      });
-      showToast("Marked Absent");
-    } catch {
-      showToast("Failed to record absence", "error");
-    }
-  };
-
-  const handleUpdateTime = async (empId: number, newIn12: string, newOut12: string) => {
-    const { workedMinutes, overtimeMinutes, firstIn24, lastOut24 } = computeShiftAttendance(newIn12, newOut12);
-
-    setAttendanceMap(prev => ({
-      ...prev,
-      [empId]: {
-        ...prev[empId],
-        status: "PRESENT",
-        clockIn12: newIn12,
-        clockOut12: newOut12,
-        first_in: firstIn24,
-        last_out: lastOut24,
-        worked_minutes: workedMinutes,
-        overtime_minutes: overtimeMinutes,
-      }
-    }));
-
-    try {
-      await apiClient.post("/attendance/records/", {
-        employee_id: empId,
-        attendance_date: todayDate,
-        status: "PRESENT",
-        first_in: firstIn24,
-        last_out: lastOut24,
-        overtime_minutes: overtimeMinutes,
-      });
-    } catch {
-      // silent
-    }
-  };
-
-  // Photo handlers
+  // Photo upload helper
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -273,9 +175,9 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (isEdit) {
-        setEditForm(f => ({ ...f, photo: dataUrl }));
+        setEditForm((f) => ({ ...f, photo: dataUrl }));
       } else {
-        setAddForm(f => ({ ...f, photo: dataUrl }));
+        setAddForm((f) => ({ ...f, photo: dataUrl }));
       }
     };
     reader.readAsDataURL(file);
@@ -289,6 +191,10 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
       work_email: "",
       employee_code: nextCode,
       date_of_joining: todayDate,
+      date_of_birth: "",
+      designation: designations[0]?.name || "Staff Member",
+      id_proof_type: "Aadhaar",
+      id_proof_number: "",
       personal_phone: "",
       personal_email: "",
       photo: "",
@@ -298,17 +204,26 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
 
   const handleCreateEmployee = async () => {
     if (!addForm.first_name || !addForm.last_name || !addForm.work_email || !addForm.employee_code) {
-      showToast("First name, last name, email and employee code are required", "error");
+      showToast("First name, last name, work email and employee code are required", "error");
       return;
     }
 
     setSaving(true);
     try {
       const defaultCompanyId = companies[0]?.id || 1;
-      const payload = {
+      const payload: any = {
         ...addForm,
         company: defaultCompanyId,
       };
+
+      // Check if selected designation matches an ID or name
+      const matchedDesig = designations.find(
+        (d) => d.name.toLowerCase() === addForm.designation.toLowerCase() || String(d.id) === String(addForm.designation)
+      );
+      if (matchedDesig) {
+        payload.designation = matchedDesig.id;
+      }
+
       await apiClient.post("/employees/", payload);
       showToast("Employee added successfully!");
       setShowAddModal(false);
@@ -329,9 +244,12 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
       work_email: emp.work_email || "",
       employee_code: emp.employee_code || "",
       date_of_joining: emp.date_of_joining || "",
-      personal_phone: emp.personal_phone || "",
+      date_of_birth: emp.date_of_birth || "",
+      designation: emp.designation_name || emp.designation_title || "",
+      id_proof_type: emp.id_proof_type || "Aadhaar",
+      id_proof_number: emp.id_proof_number || emp.aadhaar_number || emp.pan_number || "",
+      personal_phone: emp.personal_phone || emp.work_phone || "",
       personal_email: emp.personal_email || "",
-      is_active: emp.is_active ?? true,
       photo: emp.photo || "",
     });
   };
@@ -340,7 +258,15 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     if (!editingEmployee) return;
     setSaving(true);
     try {
-      await apiClient.patch(`/employees/${editingEmployee.id}/`, editForm);
+      const payload: any = { ...editForm };
+      const matchedDesig = designations.find(
+        (d) => d.name.toLowerCase() === editForm.designation.toLowerCase() || String(d.id) === String(editForm.designation)
+      );
+      if (matchedDesig) {
+        payload.designation = matchedDesig.id;
+      }
+
+      await apiClient.patch(`/employees/${editingEmployee.id}/`, payload);
       showToast("Employee details updated!");
       setEditingEmployee(null);
       fetchEmployees();
@@ -351,26 +277,58 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
     }
   };
 
-  const presentCount = Object.values(attendanceMap).filter(a => a.status === "PRESENT").length;
-  const absentCount = Object.values(attendanceMap).filter(a => a.status === "ABSENT").length;
+  // Soft Delete Handler
+  const handleConfirmDelete = async () => {
+    if (!deletingEmployee) return;
+    setSaving(true);
+    try {
+      await apiClient.delete(`/employees/${deletingEmployee.id}/`);
+      showToast(`Employee ${deletingEmployee.first_name} ${deletingEmployee.last_name} archived.`);
+      setDeletingEmployee(null);
+      fetchEmployees();
+    } catch (e: any) {
+      showToast(`Failed to archive employee: ${formatApiError(e)}`, "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const filtered = employees.filter(e => {
+  // Restore Soft-Deleted Employee Handler
+  const handleRestore = async (emp: Employee, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient.post(`/employees/${emp.id}/restore/`);
+      showToast(`Restored ${emp.first_name} ${emp.last_name} to active staff!`);
+      fetchEmployees();
+    } catch (e: any) {
+      showToast(`Failed to restore: ${formatApiError(e)}`, "error");
+    }
+  };
+
+  // Filter employees
+  const activeEmployees = employees.filter((e) => !e.is_deleted);
+  const deletedEmployees = employees.filter((e) => e.is_deleted);
+
+  const displayedEmployees = employees.filter((e) => {
+    // Respect showDeleted toggle
+    if (!showDeleted && e.is_deleted) return false;
+    if (showDeleted && !e.is_deleted) return false; // When viewing deleted list, only show deleted
+
     const q = search.toLowerCase();
-    const matchQuery = !q ||
+    const desigText = (e.designation_name || e.designation_title || "").toLowerCase();
+    const phoneText = e.personal_phone || e.work_phone || "";
+
+    const matchesSearch =
+      !q ||
       e.first_name?.toLowerCase().includes(q) ||
       e.last_name?.toLowerCase().includes(q) ||
       e.employee_code?.toLowerCase().includes(q) ||
       e.work_email?.toLowerCase().includes(q) ||
-      e.personal_phone?.includes(q);
+      phoneText.includes(q) ||
+      desigText.includes(q);
 
-    if (!matchQuery) return false;
-
-    if (filterStatus === "PRESENT") return attendanceMap[e.id]?.status === "PRESENT";
-    if (filterStatus === "ABSENT") return attendanceMap[e.id]?.status === "ABSENT";
-    return true;
+    return matchesSearch;
   });
-
-  const activeCount = employees.filter(e => e.is_active).length;
 
   return (
     <div className="directory-container animate-fade-in">
@@ -379,215 +337,209 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
         <div className="directory-title-area">
           <div className="directory-title-row">
             <h2>Staff Directory</h2>
-            <span className="directory-count-pill">{activeCount} active</span>
+            <span className="directory-count-pill">{activeEmployees.length} Active Staff</span>
+            {deletedEmployees.length > 0 && (
+              <span className="directory-count-pill pill-archived">
+                {deletedEmployees.length} Archived in Database
+              </span>
+            )}
           </div>
-          <p className="directory-sub">{employees.length} total staff • 12h Shift System</p>
+          <p className="directory-sub">
+            Corporate employee roster with designation details, contact information, and ID records
+          </p>
         </div>
         <div className="directory-btn-group">
           <button
             className="icon-btn-refresh"
-            onClick={() => { fetchEmployees(); fetchTodayAttendance(); }}
-            title="Refresh"
+            onClick={fetchEmployees}
+            title="Refresh Directory"
+            disabled={loading}
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={15} className={loading ? "spin" : ""} />
           </button>
-          <button
-            className="btn-add-staff-header"
-            onClick={handleOpenAddModal}
-          >
+          <button className="btn-add-staff-header" onClick={handleOpenAddModal}>
             <Plus size={16} />
             <span>Add Staff</span>
           </button>
         </div>
       </div>
 
-      {/* Full-width Search Bar */}
-      <div className="directory-search-wrapper">
-        <Search size={16} className="search-icon" />
-        <input
-          placeholder="Search by employee name or code…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="directory-search-input"
-        />
-        {search && (
-          <button className="search-clear-btn" onClick={() => setSearch("")}>✕</button>
-        )}
+      {/* Full-width Search Bar & Deleted Users Checkbox Toggle */}
+      <div className="directory-filter-row">
+        <div className="directory-search-wrapper">
+          <Search size={16} className="search-icon" />
+          <input
+            placeholder="Search by name, employee code, designation, or phone number…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="directory-search-input"
+          />
+          {search && (
+            <button className="search-clear-btn" onClick={() => setSearch("")}>
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* User-friendly Checkbox for Deleted Users */}
+        <div className="deleted-filter-toggle">
+          <label className="checkbox-toggle-label" title="View employees that were previously with the company">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+              className="styled-checkbox"
+            />
+            <span className="toggle-text">
+              Show Deleted Users {deletedEmployees.length > 0 && `(${deletedEmployees.length})`}
+            </span>
+          </label>
+        </div>
       </div>
 
-      {/* Quick Filter Chips */}
-      <div className="directory-filter-chips">
-        <button
-          className={`filter-chip ${filterStatus === "ALL" ? "active" : ""}`}
-          onClick={() => setFilterStatus("ALL")}
-        >
-          All Staff ({employees.length})
-        </button>
-        <button
-          className={`filter-chip chip-present ${filterStatus === "PRESENT" ? "active" : ""}`}
-          onClick={() => setFilterStatus("PRESENT")}
-        >
-          <span className="dot dot-active" /> Present Today ({presentCount})
-        </button>
-        <button
-          className={`filter-chip chip-absent ${filterStatus === "ABSENT" ? "active" : ""}`}
-          onClick={() => setFilterStatus("ABSENT")}
-        >
-          <span className="dot dot-inactive" /> Absent ({absentCount})
-        </button>
-      </div>
+      {/* Notice banner when viewing deleted list */}
+      {showDeleted && (
+        <div className="deleted-view-banner">
+          <AlertCircle size={16} />
+          <span>
+            Viewing <strong>Archived / Deleted Employees</strong>. These employee records and their attendance/payroll history remain safely preserved in the database.
+          </span>
+          <button className="btn-link-action" onClick={() => setShowDeleted(false)}>
+            Back to Active Staff
+          </button>
+        </div>
+      )}
 
-      {/* Directory List — Rectangular Bars with Attendance Marking */}
+      {/* Directory List — Rectangular Staff Bars */}
       {loading ? (
         <div className="loading-spinner">
           <RefreshCw size={18} className="spin" />
-          <span>Loading employees…</span>
+          <span>Loading staff directory…</span>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : displayedEmployees.length === 0 ? (
         <div className="empty-state">
           <Users size={48} />
-          <h3>No Employees Found</h3>
-          <p>{search ? "No match for your search" : "Click 'Add Employee' to register your first team member"}</p>
+          <h3>{showDeleted ? "No Deleted Employees" : "No Employees Found"}</h3>
+          <p>
+            {showDeleted
+              ? "There are currently no archived or deleted staff members in the database."
+              : search
+              ? "No staff members matched your search criteria."
+              : "Click '+ Add Staff' to register your first company team member."}
+          </p>
         </div>
       ) : (
         <div className="emp-bars-container">
-          {/* Header Row */}
-          <div className="emp-bars-header">
+          {/* Header Row — Pure Employee Information (No Attendance, No Status) */}
+          <div className="emp-directory-header">
             <span className="col-sr">#</span>
-            <span className="col-name">Employee</span>
-            <span className="col-code">Code</span>
-            <span className="col-att">Today's Attendance · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} (12h Shift)</span>
-            <span className="col-status">Status</span>
-            <span className="col-actions">Actions</span>
+            <span className="col-emp-name">Employee</span>
+            <span className="col-emp-code">Code</span>
+            <span className="col-emp-desig">Designation</span>
+            <span className="col-emp-contact">Contact Number</span>
+            <span className="col-emp-doj">Joining Date</span>
+            <span className="col-emp-actions">Actions</span>
           </div>
 
-          {filtered.map((emp, index) => {
-            const att = attendanceMap[emp.id];
-            const isPresent = att?.status === "PRESENT";
-            const isAbsent = att?.status === "ABSENT";
+          {displayedEmployees.map((emp, index) => {
+            const desig = emp.designation_name || emp.designation_title || "Staff Member";
+            const contactPhone = emp.personal_phone || emp.work_phone || "—";
+            const isArchived = Boolean(emp.is_deleted);
 
             return (
               <div
                 key={emp.id}
-                className="emp-bar"
+                className={`emp-directory-bar ${isArchived ? "emp-bar-archived" : ""}`}
                 onClick={() => onSelectEmployee(emp)}
-                title="Click to view workhub profile"
+                title="Click to view full workhub profile"
               >
-                <div className="emp-bar-top-row">
-                  <div className="emp-bar-top-left">
-                    {/* Sr. No. (Desktop Table Column) */}
-                    <div className="col-sr desktop-only-col">
-                      <span className="sr-pill">#{String(index + 1).padStart(2, "0")}</span>
-                    </div>
+                {/* 1. Sr. No */}
+                <div className="col-sr">
+                  <span className="sr-pill">#{String(index + 1).padStart(2, "0")}</span>
+                </div>
 
-                    {/* Avatar & Name */}
-                    <div className="col-name">
-                      {emp.photo ? (
-                        <img src={emp.photo} alt={emp.first_name} className="emp-avatar-img" />
-                      ) : (
-                        <div className="emp-avatar-sm">{initials(emp)}</div>
-                      )}
-                      <div className="emp-name-box">
-                        <span className="emp-bar-name">{emp.first_name} {emp.last_name}</span>
-                        {/* Mobile subline: Emp Code + Sr # neatly under the name */}
-                        <div className="emp-bar-subline-mobile">
-                          <span className="subline-sr">#{String(index + 1).padStart(2, "0")}</span>
-                          <span className="subline-sep">•</span>
-                          <span className="subline-code">{emp.employee_code}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Employee Code (Desktop Table Column) */}
-                    <div className="col-code desktop-only-col">
-                      <span className="code-badge">{emp.employee_code}</span>
-                    </div>
+                {/* 2. Employee Avatar & Name */}
+                <div className="col-emp-name">
+                  {emp.photo ? (
+                    <img src={emp.photo} alt={emp.first_name} className="emp-avatar-img" />
+                  ) : (
+                    <div className="emp-avatar-sm">{initials(emp)}</div>
+                  )}
+                  <div className="emp-name-box">
+                    <span className="emp-bar-name">
+                      {emp.first_name} {emp.last_name}
+                      {isArchived && <span className="archived-inline-tag">Archived</span>}
+                    </span>
+                    <span className="emp-bar-email">{emp.work_email}</span>
                   </div>
+                </div>
 
-                  <div className="emp-bar-top-right">
-                    {/* Status */}
-                    <div className="col-status">
-                      <span className={`status-badge-subtle ${emp.is_active ? "active" : "inactive"}`}>
-                        <span className={`dot ${emp.is_active ? "dot-active" : "dot-inactive"}`} />
-                        {emp.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
+                {/* 3. Employee Code */}
+                <div className="col-emp-code">
+                  <span className="code-badge">{emp.employee_code}</span>
+                </div>
 
-                    {/* Actions */}
-                    <div className="col-actions" onClick={e => e.stopPropagation()}>
+                {/* 4. Designation */}
+                <div className="col-emp-desig">
+                  <div className="desig-pill-wrapper">
+                    <Briefcase size={13} className="desig-icon" />
+                    <span className="desig-title-text">{desig}</span>
+                  </div>
+                </div>
+
+                {/* 5. Contact Number */}
+                <div className="col-emp-contact">
+                  <div className="contact-pill-wrapper">
+                    <Phone size={13} className="contact-icon" />
+                    <span className="contact-number-text">{contactPhone}</span>
+                  </div>
+                </div>
+
+                {/* 6. Date of Joining */}
+                <div className="col-emp-doj">
+                  <span className="doj-text">{emp.date_of_joining || "—"}</span>
+                </div>
+
+                {/* 7. Actions */}
+                <div className="col-emp-actions" onClick={(e) => e.stopPropagation()}>
+                  {isArchived ? (
+                    <button
+                      className="btn-restore-action"
+                      onClick={(e) => handleRestore(emp, e)}
+                      title="Restore Employee to Active List"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Restore</span>
+                    </button>
+                  ) : (
+                    <>
                       <button
                         className="btn-icon-action"
-                        onClick={e => handleOpenEdit(emp, e)}
+                        onClick={(e) => handleOpenEdit(emp, e)}
                         title="Edit Employee"
                       >
                         <Edit2 size={14} />
                       </button>
                       <button
-                        className="btn-view-profile"
-                        onClick={() => onSelectEmployee(emp)}
-                        title="View Profile"
+                        className="btn-icon-action btn-danger-action"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingEmployee(emp);
+                        }}
+                        title="Archive / Delete Employee"
                       >
-                        <span>Profile</span>
-                        <ChevronRight size={14} />
+                        <Trash2 size={14} />
                       </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Attendance Controls: P / AB in circle + immediate right Clock In/Out */}
-                <div className="col-att" onClick={e => e.stopPropagation()}>
-                  <div className="att-profile-bar-controls">
-                    {/* Present Button */}
-                    <button
-                      type="button"
-                      className={`circle-att-btn p-btn ${isPresent ? "active" : ""}`}
-                      onClick={(e) => handleMarkPresent(emp.id, e)}
-                      title="Mark Present (P)"
-                    >
-                      P
-                    </button>
-
-                    {/* Absent Button */}
-                    <button
-                      type="button"
-                      className={`circle-att-btn ab-btn ${isAbsent ? "active" : ""}`}
-                      onClick={(e) => handleMarkAbsent(emp.id, e)}
-                      title="Mark Absent (AB)"
-                    >
-                      AB
-                    </button>
-
-                    {/* Clock In / Out Box on immediate right when Present */}
-                    {isPresent && (
-                      <div className="clock-inout-box">
-                        <Time12Input
-                          label="In"
-                          value={att.clockIn12 || "08:00 AM"}
-                          onChange={(newIn) => handleUpdateTime(emp.id, newIn, att.clockOut12 || "08:00 PM")}
-                        />
-                        <span className="clock-arrow">→</span>
-                        <Time12Input
-                          label="Out"
-                          value={att.clockOut12 || "08:00 PM"}
-                          onChange={(newOut) => handleUpdateTime(emp.id, att.clockIn12 || "08:00 AM", newOut)}
-                        />
-
-                        {/* Overtime calculation badge (extra > 30m beyond 12h) */}
-                        {att.overtime_minutes > 0 ? (
-                          <span
-                            className="ot-badge-pill"
-                            title={`Exceeded 12h shift by ${att.worked_minutes - 720} mins (>30m threshold). Overtime: ${att.overtime_minutes}m`}
-                          >
-                            +{Math.floor(att.overtime_minutes / 60)}h {att.overtime_minutes % 60 > 0 ? `${att.overtime_minutes % 60}m ` : ""}OT
-                          </span>
-                        ) : (
-                          <span className="shift-badge-pill" title="Standard 12h Shift (No Overtime)">
-                            12h Shift
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    </>
+                  )}
+                  <button
+                    className="btn-view-profile"
+                    onClick={() => onSelectEmployee(emp)}
+                    title="View Profile"
+                  >
+                    <span>Profile</span>
+                    <ChevronRight size={14} />
+                  </button>
                 </div>
               </div>
             );
@@ -595,13 +547,23 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
         </div>
       )}
 
-      {/* Add Employee Modal (Includes Photo Upload) */}
+      {/* Add Employee Modal (Includes DOB, Designation, ID Proof, Contact Number, Photo) */}
       {showAddModal && (
-        <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) setShowAddModal(false); }}>
-          <div className="modal-box">
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddModal(false);
+          }}
+        >
+          <div className="modal-box modal-box-lg">
             <div className="modal-header">
-              <h3>Add New Employee</h3>
-              <button className="modal-close" onClick={() => setShowAddModal(false)}>✕</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Users size={18} color="#2563eb" />
+                <h3>Add New Employee</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowAddModal(false)}>
+                ✕
+              </button>
             </div>
             <div className="modal-body">
               {/* Photo Upload Row */}
@@ -610,11 +572,13 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                   {addForm.photo ? (
                     <img src={addForm.photo} alt="Preview" className="photo-preview-img" />
                   ) : (
-                    <User size={26} color="#94a3b8" />
+                    <User size={28} color="#94a3b8" />
                   )}
                 </div>
                 <div className="photo-upload-actions">
-                  <label className="form-label" style={{ marginBottom: 4 }}>Employee Photo</label>
+                  <label className="form-label" style={{ marginBottom: 4 }}>
+                    Employee Profile Photo
+                  </label>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="file"
@@ -634,7 +598,7 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                       <button
                         type="button"
                         className="btn btn-danger btn-xs"
-                        onClick={() => setAddForm(f => ({ ...f, photo: "" }))}
+                        onClick={() => setAddForm((f) => ({ ...f, photo: "" }))}
                       >
                         <Trash2 size={12} /> Remove
                       </button>
@@ -643,14 +607,15 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                 </div>
               </div>
 
+              {/* Name fields */}
               <div className="form-grid-2">
                 <div className="form-row">
                   <label className="form-label">First Name *</label>
                   <input
                     className="form-control"
                     value={addForm.first_name}
-                    onChange={e => setAddForm(f => ({ ...f, first_name: e.target.value }))}
-                    placeholder="e.g. Ramesh"
+                    onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
+                    placeholder="e.g. Rahul"
                   />
                 </div>
                 <div className="form-row">
@@ -658,64 +623,137 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                   <input
                     className="form-control"
                     value={addForm.last_name}
-                    onChange={e => setAddForm(f => ({ ...f, last_name: e.target.value }))}
-                    placeholder="e.g. Shinde"
+                    onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
+                    placeholder="e.g. Deshmukh"
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">Work Email *</label>
-                <input
-                  className="form-control"
-                  type="email"
-                  value={addForm.work_email}
-                  onChange={e => setAddForm(f => ({ ...f, work_email: e.target.value }))}
-                  placeholder="ramesh.shinde@company.com"
-                />
-              </div>
-
+              {/* Work Email & Employee Code */}
               <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">Work Email *</label>
+                  <input
+                    className="form-control"
+                    type="email"
+                    value={addForm.work_email}
+                    onChange={(e) => setAddForm((f) => ({ ...f, work_email: e.target.value }))}
+                    placeholder="rahul.deshmukh@sahayog.local"
+                  />
+                </div>
                 <div className="form-row">
                   <label className="form-label">Employee Code *</label>
                   <input
                     className="form-control"
                     value={addForm.employee_code}
-                    onChange={e => setAddForm(f => ({ ...f, employee_code: e.target.value }))}
+                    onChange={(e) => setAddForm((f) => ({ ...f, employee_code: e.target.value }))}
                     placeholder="EMP-001"
-                  />
-                </div>
-                <div className="form-row">
-                  <label className="form-label">Date of Joining</label>
-                  <input
-                    className="form-control"
-                    type="date"
-                    value={addForm.date_of_joining}
-                    onChange={e => setAddForm(f => ({ ...f, date_of_joining: e.target.value }))}
                   />
                 </div>
               </div>
 
+              {/* Designation & Contact Number (Personal Phone) */}
               <div className="form-grid-2">
                 <div className="form-row">
-                  <label className="form-label">Personal Phone</label>
+                  <label className="form-label">
+                    <Briefcase size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Designation *
+                  </label>
+                  <input
+                    className="form-control"
+                    list="designation-suggestions"
+                    value={addForm.designation}
+                    onChange={(e) => setAddForm((f) => ({ ...f, designation: e.target.value }))}
+                    placeholder="e.g. Senior Software Engineer"
+                  />
+                  <datalist id="designation-suggestions">
+                    {designations.map((d) => (
+                      <option key={d.id} value={d.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="form-row">
+                  <label className="form-label">
+                    <Phone size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Contact Number *
+                  </label>
                   <input
                     className="form-control"
                     value={addForm.personal_phone}
-                    onChange={e => setAddForm(f => ({ ...f, personal_phone: e.target.value }))}
-                    placeholder="+91 98XXXXXXXX"
+                    onChange={(e) => setAddForm((f) => ({ ...f, personal_phone: e.target.value }))}
+                    placeholder="+91 98221 11223"
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth (DOB) & Date of Joining */}
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">
+                    <Calendar size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Date of Birth (DOB)
+                  </label>
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={addForm.date_of_birth}
+                    onChange={(e) => setAddForm((f) => ({ ...f, date_of_birth: e.target.value }))}
                   />
                 </div>
                 <div className="form-row">
-                  <label className="form-label">Personal Email</label>
+                  <label className="form-label">
+                    <Calendar size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Date of Joining
+                  </label>
                   <input
                     className="form-control"
-                    type="email"
-                    value={addForm.personal_email}
-                    onChange={e => setAddForm(f => ({ ...f, personal_email: e.target.value }))}
-                    placeholder="personal@gmail.com"
+                    type="date"
+                    value={addForm.date_of_joining}
+                    onChange={(e) => setAddForm((f) => ({ ...f, date_of_joining: e.target.value }))}
                   />
                 </div>
+              </div>
+
+              {/* ID Proof Type & ID Proof Number */}
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">
+                    <CreditCard size={12} style={{ marginRight: 4, display: "inline" }} />
+                    ID Proof Type
+                  </label>
+                  <select
+                    className="form-control"
+                    value={addForm.id_proof_type}
+                    onChange={(e) => setAddForm((f) => ({ ...f, id_proof_type: e.target.value }))}
+                  >
+                    <option value="Aadhaar">Aadhaar Card</option>
+                    <option value="PAN">PAN Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Voter ID">Voter ID</option>
+                    <option value="Driving License">Driving License</option>
+                  </select>
+                </div>
+                <div className="form-row">
+                  <label className="form-label">ID Proof Number</label>
+                  <input
+                    className="form-control"
+                    value={addForm.id_proof_number}
+                    onChange={(e) => setAddForm((f) => ({ ...f, id_proof_number: e.target.value }))}
+                    placeholder={addForm.id_proof_type === "Aadhaar" ? "XXXX-XXXX-XXXX" : "ABCDE1234F"}
+                  />
+                </div>
+              </div>
+
+              {/* Personal Email */}
+              <div className="form-row">
+                <label className="form-label">Personal Email</label>
+                <input
+                  className="form-control"
+                  type="email"
+                  value={addForm.personal_email}
+                  onChange={(e) => setAddForm((f) => ({ ...f, personal_email: e.target.value }))}
+                  placeholder="personal@gmail.com"
+                />
               </div>
             </div>
             <div className="modal-footer">
@@ -730,26 +768,40 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
         </div>
       )}
 
-      {/* Edit Employee Modal (Includes Photo Upload) */}
+      {/* Edit Employee Modal */}
       {editingEmployee && (
-        <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) setEditingEmployee(null); }}>
-          <div className="modal-box">
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingEmployee(null);
+          }}
+        >
+          <div className="modal-box modal-box-lg">
             <div className="modal-header">
-              <h3>Edit Employee — {editingEmployee.first_name} {editingEmployee.last_name}</h3>
-              <button className="modal-close" onClick={() => setEditingEmployee(null)}>✕</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Edit2 size={18} color="#2563eb" />
+                <h3>
+                  Edit Employee — {editingEmployee.first_name} {editingEmployee.last_name}
+                </h3>
+              </div>
+              <button className="modal-close" onClick={() => setEditingEmployee(null)}>
+                ✕
+              </button>
             </div>
             <div className="modal-body">
-              {/* Photo Upload Row */}
+              {/* Photo Upload in Edit Modal */}
               <div className="form-row photo-upload-row">
                 <div className="photo-preview-circle">
                   {editForm.photo ? (
                     <img src={editForm.photo} alt="Preview" className="photo-preview-img" />
                   ) : (
-                    <User size={26} color="#94a3b8" />
+                    <User size={28} color="#94a3b8" />
                   )}
                 </div>
                 <div className="photo-upload-actions">
-                  <label className="form-label" style={{ marginBottom: 4 }}>Employee Photo</label>
+                  <label className="form-label" style={{ marginBottom: 4 }}>
+                    Employee Profile Photo
+                  </label>
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input
                       type="file"
@@ -769,7 +821,7 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                       <button
                         type="button"
                         className="btn btn-danger btn-xs"
-                        onClick={() => setEditForm(f => ({ ...f, photo: "" }))}
+                        onClick={() => setEditForm((f) => ({ ...f, photo: "" }))}
                       >
                         <Trash2 size={12} /> Remove
                       </button>
@@ -778,13 +830,14 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                 </div>
               </div>
 
+              {/* Name fields */}
               <div className="form-grid-2">
                 <div className="form-row">
                   <label className="form-label">First Name *</label>
                   <input
                     className="form-control"
                     value={editForm.first_name}
-                    onChange={e => setEditForm(f => ({ ...f, first_name: e.target.value }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
                   />
                 </div>
                 <div className="form-row">
@@ -792,83 +845,130 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                   <input
                     className="form-control"
                     value={editForm.last_name}
-                    onChange={e => setEditForm(f => ({ ...f, last_name: e.target.value }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">Work Email *</label>
-                <input
-                  className="form-control"
-                  type="email"
-                  value={editForm.work_email}
-                  onChange={e => setEditForm(f => ({ ...f, work_email: e.target.value }))}
-                />
-              </div>
-
+              {/* Work Email & Employee Code */}
               <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">Work Email *</label>
+                  <input
+                    className="form-control"
+                    type="email"
+                    value={editForm.work_email}
+                    onChange={(e) => setEditForm((f) => ({ ...f, work_email: e.target.value }))}
+                  />
+                </div>
                 <div className="form-row">
                   <label className="form-label">Employee Code *</label>
                   <input
                     className="form-control"
                     value={editForm.employee_code}
-                    onChange={e => setEditForm(f => ({ ...f, employee_code: e.target.value }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, employee_code: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Designation & Contact Number */}
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">
+                    <Briefcase size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Designation
+                  </label>
+                  <input
+                    className="form-control"
+                    list="edit-designation-suggestions"
+                    value={editForm.designation}
+                    onChange={(e) => setEditForm((f) => ({ ...f, designation: e.target.value }))}
+                  />
+                  <datalist id="edit-designation-suggestions">
+                    {designations.map((d) => (
+                      <option key={d.id} value={d.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="form-row">
+                  <label className="form-label">
+                    <Phone size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Contact Number
+                  </label>
+                  <input
+                    className="form-control"
+                    value={editForm.personal_phone}
+                    onChange={(e) => setEditForm((f) => ({ ...f, personal_phone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth & Joining Date */}
+              <div className="form-grid-2">
+                <div className="form-row">
+                  <label className="form-label">
+                    <Calendar size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Date of Birth (DOB)
+                  </label>
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={editForm.date_of_birth}
+                    onChange={(e) => setEditForm((f) => ({ ...f, date_of_birth: e.target.value }))}
                   />
                 </div>
                 <div className="form-row">
-                  <label className="form-label">Date of Joining</label>
+                  <label className="form-label">
+                    <Calendar size={12} style={{ marginRight: 4, display: "inline" }} />
+                    Date of Joining
+                  </label>
                   <input
                     className="form-control"
                     type="date"
                     value={editForm.date_of_joining}
-                    onChange={e => setEditForm(f => ({ ...f, date_of_joining: e.target.value }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, date_of_joining: e.target.value }))}
                   />
                 </div>
               </div>
 
+              {/* ID Proof Type & Number */}
               <div className="form-grid-2">
                 <div className="form-row">
-                  <label className="form-label">Personal Phone</label>
-                  <input
+                  <label className="form-label">
+                    <CreditCard size={12} style={{ marginRight: 4, display: "inline" }} />
+                    ID Proof Type
+                  </label>
+                  <select
                     className="form-control"
-                    value={editForm.personal_phone}
-                    onChange={e => setEditForm(f => ({ ...f, personal_phone: e.target.value }))}
-                  />
+                    value={editForm.id_proof_type}
+                    onChange={(e) => setEditForm((f) => ({ ...f, id_proof_type: e.target.value }))}
+                  >
+                    <option value="Aadhaar">Aadhaar Card</option>
+                    <option value="PAN">PAN Card</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Voter ID">Voter ID</option>
+                    <option value="Driving License">Driving License</option>
+                  </select>
                 </div>
                 <div className="form-row">
-                  <label className="form-label">Personal Email</label>
+                  <label className="form-label">ID Proof Number</label>
                   <input
                     className="form-control"
-                    type="email"
-                    value={editForm.personal_email}
-                    onChange={e => setEditForm(f => ({ ...f, personal_email: e.target.value }))}
+                    value={editForm.id_proof_number}
+                    onChange={(e) => setEditForm((f) => ({ ...f, id_proof_number: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <div className="form-row" style={{ marginTop: 8 }}>
-                <label className="form-label">Employment Status</label>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5 }}>
-                    <input
-                      type="radio"
-                      name="is_active"
-                      checked={editForm.is_active === true}
-                      onChange={() => setEditForm(f => ({ ...f, is_active: true }))}
-                    />
-                    Active
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13.5 }}>
-                    <input
-                      type="radio"
-                      name="is_active"
-                      checked={editForm.is_active === false}
-                      onChange={() => setEditForm(f => ({ ...f, is_active: false }))}
-                    />
-                    Inactive
-                  </label>
-                </div>
+              {/* Personal Email */}
+              <div className="form-row">
+                <label className="form-label">Personal Email</label>
+                <input
+                  className="form-control"
+                  type="email"
+                  value={editForm.personal_email}
+                  onChange={(e) => setEditForm((f) => ({ ...f, personal_email: e.target.value }))}
+                />
               </div>
             </div>
             <div className="modal-footer">
@@ -883,7 +983,50 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
         </div>
       )}
 
+      {/* Soft Delete Confirmation Modal */}
+      {deletingEmployee && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeletingEmployee(null);
+          }}
+        >
+          <div className="modal-box modal-box-confirm">
+            <div className="modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Trash2 size={18} color="#dc2626" />
+                <h3>Archive / Delete Employee</h3>
+              </div>
+              <button className="modal-close" onClick={() => setDeletingEmployee(null)}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: 14, color: "#1e293b", lineHeight: 1.5 }}>
+                Are you sure you want to archive <strong>{deletingEmployee.first_name} {deletingEmployee.last_name}</strong> (Code: <code>{deletingEmployee.employee_code}</code>)?
+              </p>
+              <div className="archive-info-box">
+                <AlertCircle size={16} color="#d97706" />
+                <div style={{ fontSize: 12.5, color: "#92400e" }}>
+                  <strong>Data Safety Guarantee:</strong> The employee will be hidden from the active roster, but all historical records (attendance, payslips, leaves, and documents) will remain permanently stored in the database. You can view or restore them at any time by checking <em>"Show Deleted Users"</em>.
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setDeletingEmployee(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleConfirmDelete} disabled={saving}>
+                <Trash2 size={14} /> {saving ? "Archiving…" : "Confirm Archive"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
     </div>
   );
 };
+
+export default AdminEmployeeDirectory;

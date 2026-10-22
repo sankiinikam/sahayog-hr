@@ -61,6 +61,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "work_email",
+            "personal_email",
+            "personal_phone",
+            "work_phone",
+            "date_of_birth",
             "department",
             "department_name",
             "designation",
@@ -69,6 +73,12 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "employment_status",
             "date_of_joining",
             "is_active",
+            "id_proof_type",
+            "id_proof_number",
+            "aadhaar_number",
+            "pan_number",
+            "is_deleted",
+            "deleted_at",
             "photo",
         ]
 

@@ -29,20 +29,29 @@ from apps.audit.services import log_action
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    filterset_fields = ["department", "designation", "employment_status", "employment_type", "is_active"]
-    search_fields = ["employee_code", "first_name", "last_name", "work_email"]
+    filterset_fields = ["department", "designation", "employment_status", "employment_type", "is_active", "is_deleted"]
+    search_fields = ["employee_code", "first_name", "last_name", "work_email", "personal_phone"]
     ordering_fields = ["employee_code", "date_of_joining", "first_name"]
 
     def get_queryset(self):
         user = self.request.user
         queryset = Employee.objects.select_related("department", "designation", "company", "reporting_manager")
+
+        # Soft delete filter for listing (detail views like restore, retrieve can access archived records)
+        if self.action == "list":
+            show_deleted = str(self.request.query_params.get("show_deleted", "")).lower() in ["true", "1"]
+            is_del_param = self.request.query_params.get("is_deleted")
+            if is_del_param is not None:
+                queryset = queryset.filter(is_deleted=str(is_del_param).lower() in ["true", "1"])
+            elif not show_deleted:
+                queryset = queryset.filter(is_deleted=False)
         
         # If employee, they can only view active employees or their own profile
         if user.role == UserRole.EMPLOYEE:
             if self.action in ["retrieve", "me"]:
                 return queryset.filter(user=user)
             # Directory listing: only active employees
-            return queryset.filter(is_active=True)
+            return queryset.filter(is_active=True, is_deleted=False)
             
         # Managers can see their team and active employees
         if user.role == UserRole.MANAGER:
@@ -71,11 +80,82 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             if not comp:
                 comp = Company.objects.create(name="Sahayog Technologies Pvt. Ltd.", registration_number="SAHAYOG-001")
             data["company"] = comp.id
+
+        # Designation name resolution
+        if data.get("designation") is not None and not isinstance(data.get("designation"), int):
+            from apps.organization.models import Designation, Department
+            desig_val = str(data["designation"]).strip()
+            if desig_val.isdigit():
+                data["designation"] = int(desig_val)
+            elif desig_val:
+                dept = Department.objects.first()
+                comp_id = data.get("company", 1)
+                desig_obj, _ = Designation.objects.get_or_create(
+                    company_id=comp_id,
+                    name=desig_val,
+                    defaults={"code": desig_val[:10].upper(), "department": dept}
+                )
+                data["designation"] = desig_obj.id
+
+        # ID proof mapping
+        id_num = str(data.get("id_proof_number", "")).strip()
+        id_type = str(data.get("id_proof_type", "Aadhaar")).strip()
+        if id_num:
+            if "pan" in id_type.lower() and not data.get("pan_number"):
+                data["pan_number"] = id_num
+            elif not data.get("aadhaar_number"):
+                data["aadhaar_number"] = id_num
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        """Soft delete: mark employee as deleted without removing historical data."""
+        from django.utils import timezone
+        employee = self.get_object()
+        employee.is_deleted = True
+        employee.is_active = False
+        employee.deleted_at = timezone.now()
+        employee.save(update_fields=["is_deleted", "is_active", "deleted_at"])
+        log_action(
+            user=self.request.user,
+            action="EMPLOYEE_DELETED",
+            content_type="Employee",
+            object_id=employee.id,
+            object_repr=str(employee),
+            ip_address=self.request.META.get("REMOTE_ADDR"),
+        )
+        return Response({
+            "detail": f"Employee {employee.full_name} has been archived/soft-deleted.",
+            "id": employee.id,
+            "is_deleted": True
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="restore", permission_classes=[permissions.IsAuthenticated, IsAdminOrHR])
+    def restore(self, request, pk=None):
+        """Restore a soft-deleted employee back to the active directory."""
+        employee = self.get_object()
+        employee.is_deleted = False
+        employee.is_active = True
+        employee.deleted_at = None
+        employee.save(update_fields=["is_deleted", "is_active", "deleted_at"])
+        log_action(
+            user=self.request.user,
+            action="EMPLOYEE_RESTORED",
+            content_type="Employee",
+            object_id=employee.id,
+            object_repr=str(employee),
+            ip_address=self.request.META.get("REMOTE_ADDR"),
+        )
+        return Response({
+            "detail": f"Employee {employee.full_name} restored successfully.",
+            "id": employee.id,
+            "is_deleted": False,
+            "is_active": True
+        }, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         employee = serializer.save()
@@ -161,6 +241,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "name": employee.designation.name if employee.designation else "",
             },
             "is_active": employee.is_active,
+            "is_deleted": employee.is_deleted,
+            "id_proof_type": getattr(employee, "id_proof_type", "Aadhaar"),
+            "id_proof_number": getattr(employee, "id_proof_number", "") or employee.aadhaar_number or employee.pan_number or "",
+            "aadhaar_number": employee.aadhaar_number,
+            "pan_number": employee.pan_number,
             "photo": employee.photo or "",
             "stats_30d": {
                 "present": present_count,

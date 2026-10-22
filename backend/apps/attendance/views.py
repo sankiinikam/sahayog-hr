@@ -121,6 +121,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
                 "worked_minutes": r.worked_minutes,
                 "overtime_minutes": r.overtime_minutes,
                 "is_late": r.is_late,
+                "late_minutes": r.late_minutes,
                 "shift_id": r.shift_id,
                 "shift_name": r.shift.name if r.shift else None,
             }
@@ -129,7 +130,7 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         return Response({"results": data, "count": len(data)})
 
     def create(self, request, *args, **kwargs):
-        """Admin creates an attendance record for any employee on any date."""
+        """Admin creates or updates an attendance record for any employee on any date."""
         employee_id = request.data.get("employee_id")
         attendance_date = request.data.get("attendance_date")
         att_status = request.data.get("status", "PRESENT")
@@ -137,6 +138,8 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         last_out = request.data.get("last_out")
         shift_id = request.data.get("shift_id")
         raw_ot = request.data.get("overtime_minutes")
+        raw_is_late = request.data.get("is_late")
+        raw_late_min = request.data.get("late_minutes")
 
         if not employee_id or not attendance_date:
             return Response({"detail": "employee_id and attendance_date are required."},
@@ -146,6 +149,8 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         shift = Shift.objects.filter(id=shift_id).first() if shift_id else None
 
         worked_minutes = 0
+        in_min = 0
+        out_min = 0
         if first_in and last_out:
             try:
                 in_parts = [int(p) for p in str(first_in).split(":")[:2]]
@@ -168,6 +173,27 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         else:
             overtime_minutes = 0
 
+        # Late marker determination
+        is_late = False
+        late_minutes = 0
+        if raw_is_late is not None:
+            is_late = bool(raw_is_late)
+            late_minutes = int(raw_late_min or 0)
+        elif att_status == "LATE":
+            is_late = True
+            att_status = "PRESENT"
+            late_minutes = int(raw_late_min or 30)
+        elif first_in and att_status == "PRESENT":
+            try:
+                in_parts = [int(p) for p in str(first_in).split(":")[:2]]
+                in_time_mins = in_parts[0] * 60 + in_parts[1]
+                # Default 08:30 or 09:30 cutoff for morning shifts
+                if in_time_mins > (9 * 60 + 30):
+                    is_late = True
+                    late_minutes = in_time_mins - (9 * 60 + 30)
+            except Exception:
+                pass
+
         try:
             record, created = AttendanceRecord.objects.update_or_create(
                 employee=employee,
@@ -179,6 +205,8 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
                     "shift": shift,
                     "worked_minutes": worked_minutes,
                     "overtime_minutes": overtime_minutes,
+                    "is_late": is_late,
+                    "late_minutes": late_minutes,
                     "is_corrected": True,
                 }
             )
@@ -194,9 +222,47 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
             "last_out": str(record.last_out) if record.last_out else None,
             "worked_minutes": record.worked_minutes,
             "overtime_minutes": record.overtime_minutes,
+            "is_late": record.is_late,
+            "late_minutes": record.late_minutes,
             "shift_id": record.shift_id,
             "created": created,
         }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="batch-mark")
+    def batch_mark(self, request):
+        """Batch mark attendance for multiple employees (Admin super-action)."""
+        employee_ids = request.data.get("employee_ids", [])
+        attendance_date = request.data.get("attendance_date")
+        att_status = request.data.get("status", "PRESENT")
+        first_in = request.data.get("first_in", "08:00:00" if att_status == "PRESENT" else None)
+        last_out = request.data.get("last_out", "20:00:00" if att_status == "PRESENT" else None)
+
+        if not attendance_date or not employee_ids:
+            return Response({"detail": "employee_ids and attendance_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_count = 0
+        for emp_id in employee_ids:
+            try:
+                emp = Employee.objects.get(id=emp_id)
+                AttendanceRecord.objects.update_or_create(
+                    employee=emp,
+                    attendance_date=attendance_date,
+                    defaults={
+                        "status": att_status,
+                        "first_in": first_in,
+                        "last_out": last_out,
+                        "worked_minutes": 720 if att_status == "PRESENT" else 0,
+                        "overtime_minutes": 0,
+                        "is_late": False,
+                        "late_minutes": 0,
+                        "is_corrected": True,
+                    }
+                )
+                updated_count += 1
+            except Exception:
+                pass
+
+        return Response({"detail": f"Successfully marked {updated_count} employees as {att_status}."})
 
     def partial_update(self, request, *args, **kwargs):
         """Admin updates an existing attendance record."""
