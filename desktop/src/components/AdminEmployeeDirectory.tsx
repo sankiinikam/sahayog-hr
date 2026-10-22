@@ -491,7 +491,18 @@ export const AdminEmployeeDirectory: React.FC<Props> = ({ onSelectEmployee }) =>
                 <div className="col-emp-contact">
                   <div className="contact-pill-wrapper">
                     <Phone size={13} className="contact-icon" />
-                    <span className="contact-number-text">{contactPhone}</span>
+                    {contactPhone !== "—" ? (
+                      <a
+                        href={`tel:${contactPhone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="contact-number-text"
+                        title="Tap to call worker"
+                      >
+                        {contactPhone}
+                      </a>
+                    ) : (
+                      <span className="contact-number-text">{contactPhone}</span>
+                    )}
                   </div>
                 </div>
 

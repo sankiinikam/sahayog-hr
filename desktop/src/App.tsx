@@ -7,14 +7,13 @@ import { CompanyProfile } from "./components/CompanyProfile";
 import { AttendanceView } from "./components/AttendanceView";
 import { LeaveView } from "./components/LeaveView";
 import { PayrollView } from "./components/PayrollView";
-import { OperationsView } from "./components/OperationsView";
-import { Users, Clock, Calendar, Banknote, Briefcase, Building2, LogOut, Bell, Settings, RefreshCw } from "lucide-react";
+import { Users, Clock, Calendar, Banknote, Building2, LogOut, Bell, Settings, RefreshCw } from "lucide-react";
 import { SahayogLogo } from "./components/SahayogLogo";
 import { UpdateNotification } from "./components/UpdateNotification";
 import { isOfflineMode, setOfflineMode } from "./api/client";
 import "./App.css";
 
-type TabType = "employees" | "attendance" | "leave" | "payroll" | "operations" | "company";
+type TabType = "employees" | "attendance" | "leave" | "payroll" | "company";
 
 export const App: React.FC = () => {
   // Open the Login page directly on app launch (Mobile & Desktop)
@@ -119,17 +118,6 @@ export const App: React.FC = () => {
           </button>
 
           <button
-            className={`nav-item ${currentTab === "operations" ? "active" : ""}`}
-            onClick={() => {
-              setCurrentTab("operations");
-              setSelectedEmployee(null);
-            }}
-          >
-            <Briefcase size={18} />
-            <span>Operations</span>
-          </button>
-
-          <button
             className={`nav-item ${currentTab === "company" ? "active" : ""}`}
             onClick={() => {
               setCurrentTab("company");
@@ -137,7 +125,7 @@ export const App: React.FC = () => {
             }}
           >
             <Building2 size={18} />
-            <span>Company Profile</span>
+            <span>Factory & Settings</span>
           </button>
         </nav>
 
@@ -174,13 +162,11 @@ export const App: React.FC = () => {
                 {currentTab === "attendance"
                   ? "Attendance & Shifts"
                   : currentTab === "leave"
-                  ? "Leave & Time Off"
+                  ? "Worker Leaves & Approvals"
                   : currentTab === "payroll"
                   ? "Payroll & Payslips"
-                  : currentTab === "operations"
-                  ? "Operations"
                   : currentTab === "company"
-                  ? "Company Profile"
+                  ? "Factory & Settings"
                   : "Staff Directory"}
               </span>
             )}
@@ -220,8 +206,6 @@ export const App: React.FC = () => {
             <LeaveView />
           ) : currentTab === "payroll" ? (
             <PayrollView />
-          ) : currentTab === "operations" ? (
-            <OperationsView />
           ) : selectedEmployee ? (
             <AdminEmployeeProfile
               employeeId={selectedEmployee.id}
@@ -233,7 +217,7 @@ export const App: React.FC = () => {
         </section>
       </main>
 
-      {/* Mobile Bottom Navigation Bar (Visible only on mobile screens) */}
+      {/* Mobile Bottom Navigation Bar (5 Core Manufacturing Tabs) */}
       <nav className="mobile-bottom-nav">
         <button
           className={`mobile-nav-btn ${currentTab === "employees" ? "active" : ""}`}
@@ -265,7 +249,7 @@ export const App: React.FC = () => {
           }}
         >
           <Calendar size={19} />
-          <span>Leave</span>
+          <span>Leaves</span>
         </button>
 
         <button
@@ -280,17 +264,6 @@ export const App: React.FC = () => {
         </button>
 
         <button
-          className={`mobile-nav-btn ${currentTab === "operations" ? "active" : ""}`}
-          onClick={() => {
-            setCurrentTab("operations");
-            setSelectedEmployee(null);
-          }}
-        >
-          <Briefcase size={19} />
-          <span>Ops</span>
-        </button>
-
-        <button
           className={`mobile-nav-btn ${currentTab === "company" ? "active" : ""}`}
           onClick={() => {
             setCurrentTab("company");
@@ -298,7 +271,7 @@ export const App: React.FC = () => {
           }}
         >
           <Building2 size={19} />
-          <span>Company</span>
+          <span>Factory</span>
         </button>
       </nav>
     </div>

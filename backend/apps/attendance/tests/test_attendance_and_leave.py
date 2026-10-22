@@ -200,3 +200,27 @@ class TestLeaveEngine:
         })
         assert overlap_res.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_admin_can_view_all_leave_requests_and_record_for_employee(self, api_client, employee, admin_user, leave_type):
+        api_client.force_authenticate(user=admin_user)
+        start = (date.today() + timedelta(days=10)).isoformat()
+        end = (date.today() + timedelta(days=11)).isoformat()
+
+        # Admin logs leave on behalf of a worker with auto_approve
+        res = api_client.post("/api/v1/leave/requests/", {
+            "employee_id": employee.id,
+            "leave_type": leave_type.id,
+            "start_date": start,
+            "end_date": end,
+            "reason": "Factory worker sick leave",
+            "auto_approve": True
+        })
+        assert res.status_code == status.HTTP_201_CREATED
+        assert res.data["status"] == "APPROVED"
+        assert res.data["employee_id"] == employee.id
+
+        # Admin lists all requests
+        list_res = api_client.get("/api/v1/leave/requests/")
+        assert list_res.status_code == status.HTTP_200_OK
+        results = list_res.data.get("results", [])
+        assert any(r["employee_id"] == employee.id for r in results)
+
