@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sahayog HR - AWS Cloud Infrastructure & Architecture Report</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 14mm 14mm 14mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 13px;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    .header {
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .brand-subtitle {
+      font-size: 12px;
+      color: #64748b;
+      margin: 2px 0 0 0;
+    }
+    .meta-box {
+      text-align: right;
+      font-size: 11px;
+      color: #64748b;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-success {
+      background-color: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .badge-blue {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 20px 0 10px 0;
+      border-left: 4px solid #2563eb;
+      padding-left: 8px;
+      letter-spacing: -0.2px;
+    }
+    p {
+      margin: 0 0 10px 0;
+      color: #334155;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+      border-top: 1px solid #e2e8f0;
+    }
+    tr:nth-child(even) td {
+      background-color: #fbfcfe;
+    }
+    .table-highlight {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .code-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      background-color: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+    .diagram-box {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      margin: 12px 0 16px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #1e293b;
+      white-space: pre;
+      overflow: hidden;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      background: #ffffff;
+    }
+    .card h3 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card p {
+      font-size: 11.5px;
+      margin: 0;
+      color: #475569;
+    }
+    .highlight-card {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .highlight-card h3 {
+      color: #1d4ed8;
+    }
+    .callout {
+      border-left: 4px solid #10b981;
+      background-color: #f0fdf4;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 12px;
+    }
+    .callout-title {
+      font-weight: 700;
+      color: #047857;
+      margin-bottom: 2px;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+    .footer {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      font-size: 10.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-logo">S</div>
+      <div>
+        <h1 class="brand-title">Sahayog HRMS</h1>
+        <div class="brand-subtitle">AWS Cloud Infrastructure & Technical Architecture Report</div>
+      </div>
+    </div>
+    <div class="meta-box">
+      <div><span class="badge badge-success">● Production Live</span></div>
+      <div style="margin-top: 4px;"><strong>Date:</strong> October 22, 2026</div>
+      <div><strong>Target Cost:</strong> ₹0 / $0 (AWS Free Tier)</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <h2>1. Executive Summary</h2>
+  <p>
+    The Sahayog HR Management System is hosted in a high-efficiency, fully containerized production architecture deployed on <strong>Amazon Web Services (AWS)</strong>. The system is provisioned via <strong>AWS CloudFormation</strong> and optimized for the <strong>AWS Free Tier</strong>, enabling zero operational hosting costs while delivering full HTTPS TLS encryption, automatic subdomain routing, persistent database backups, and high availability for both web users and the native Android mobile app.
+  </p>
+
+  <!-- ARCHITECTURE DIAGRAM -->
+  <h2>2. End-to-End System Architecture</h2>
+  <div class="diagram-box">
+  [ Android Mobile App (Capacitor 8) ]       [ Web Browser (Desktop / Mobile) ]
+                         │                                     │
+                         └──────────────────┬──────────────────┘
+                                            │ HTTPS / TLS (Port 443)
+                                            ▼
+                    ┌───────────────────────────────────────────────┐
+                    │      AWS EC2 Server: 34.230.20.223            │
+                    │      Domain: 34-230-20-223.sslip.io           │
+                    │                                               │
+                    │   ┌────────────────────────────────────────┐  │
+                    │   │  Caddy 2 Reverse Proxy (Port 80/443)   │  │
+                    │   │  • Auto Let's Encrypt TLS Certificate  │  │
+                    │   │  • Serves React Single Page App (SPA)  │  │
+                    │   └───────────────────┬────────────────────┘  │
+                    │                       │ Reverse Proxy (:8000) │
+                    │                       ▼                       │
+                    │   ┌────────────────────────────────────────┐  │
+                    │   │  Django REST Framework (Gunicorn)      │  │
+                    │   │  • Python 3.12 Backend                 │  │
+                    │   │  • SimpleJWT Auth (15-min access)      │  │
+                    │   │  • WeasyPrint PDF Engine               │  │
+                    │   └───────────────────┬────────────────────┘  │
+                    │                       │ Port 5432             │
+                    │                       ▼                       │
+                    │   ┌────────────────────────────────────────┐  │
+                    │   │  PostgreSQL 16 Alpine Database         │  │
+                    │   │  • Persistent Docker Volume            │  │
+                    │   └────────────────────────────────────────┘  │
+                    └───────────────────────────────────────────────┘</div>
+
+  <!-- SECTION 3 -->
+  <h2>3. AWS Infrastructure Specifications</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Component</th>
+        <th style="width: 35%;">AWS Specification</th>
+        <th style="width: 40%;">Description & Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="table-highlight">Cloud Compute</td>
+        <td><span class="code-pill">EC2 t3.micro</span></td>
+        <td>2 vCPU burstable, 1 GB RAM, AWS Free Tier eligible.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Instance ID</td>
+        <td><span class="code-pill">i-0326b8a57385679b1</span></td>
+        <td>Active virtual machine instance in AWS EC2 console.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Region & AZ</td>
+        <td><span class="code-pill">us-east-1 (N. Virginia)</span> / <span class="code-pill">us-east-1c</span></td>
+        <td>Primary AWS global region for highest Free Tier coverage.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Operating System</td>
+        <td><span class="code-pill">Ubuntu 24.04 LTS x86_64</span></td>
+        <td>Official Canonical server image with Linux kernel 6.8.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Block Storage (EBS)</td>
+        <td><span class="code-pill">20 GB gp3 SSD (Encrypted)</span></td>
+        <td>Encrypted root filesystem (<span class="code-pill">/dev/sda1</span>) with 3000 IOPS & 125 MB/s baseline.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Memory Extension</td>
+        <td><span class="code-pill">2.0 GB Swapfile (/swapfile)</span></td>
+        <td>Configured via EC2 UserData bootstrap to prevent OOM during Docker builds.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Networking (VPC)</td>
+        <td><span class="code-pill">Default VPC (vpc-0e944f63f5c58a72a)</span></td>
+        <td>Standard AWS VPC with public routing table and internet gateway.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Public IPv4</td>
+        <td><span class="code-pill">34.230.20.223</span></td>
+        <td>Allocated public IPv4 for external HTTPS and SSH management.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Private IPv4</td>
+        <td><span class="code-pill">172.31.31.238</span></td>
+        <td>Internal VPC subnet address.</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">SSH Authentication</td>
+        <td><span class="code-pill">sahayog-hr-key.pem</span></td>
+        <td>RSA 2048-bit key pair registered as <span class="code-pill">sahayog-hr-key</span>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAGE BREAK FOR CLEAN PRINTING -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 4 -->
+  <h2>4. AWS Security Group Rules</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Port</th>
+        <th>Protocol</th>
+        <th>Source</th>
+        <th>Security Rationale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Inbound</td>
+        <td><span class="code-pill">80</span></td>
+        <td>TCP</td>
+        <td><span class="code-pill">0.0.0.0/0</span></td>
+        <td>Standard HTTP traffic; automatically redirected to HTTPS (443) by Caddy.</td>
+      </tr>
+      <tr>
+        <td>Inbound</td>
+        <td><span class="code-pill">443</span></td>
+        <td>TCP</td>
+        <td><span class="code-pill">0.0.0.0/0</span></td>
+        <td>Encrypted HTTPS traffic for Web SPA and Mobile App REST API requests.</td>
+      </tr>
+      <tr>
+        <td>Inbound</td>
+        <td><span class="code-pill">22</span></td>
+        <td>TCP</td>
+        <td><span class="code-pill">0.0.0.0/0</span></td>
+        <td>Administrative SSH shell access authenticated exclusively by PEM private key.</td>
+      </tr>
+      <tr>
+        <td>Outbound</td>
+        <td>All</td>
+        <td>All</td>
+        <td><span class="code-pill">0.0.0.0/0</span></td>
+        <td>Allows container image pulls, Ubuntu security patches, and GitHub sync.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 5 -->
+  <h2>5. Containerized Services Running on EC2</h2>
+  <div class="grid-2">
+    <div class="card highlight-card">
+      <h3><span class="badge badge-blue">Caddy 2 Proxy</span> (app-caddy-1)</h3>
+      <p>
+        Acts as the front-facing entry point. Terminates SSL/TLS with zero maintenance using automatic Let's Encrypt certificates. Serves the pre-compiled React frontend SPA directly from the <span class="code-pill">/srv</span> mount and proxies API requests to Gunicorn.
+      </p>
+    </div>
+    <div class="card highlight-card">
+      <h3><span class="badge badge-blue">Django Backend</span> (app-api-1)</h3>
+      <p>
+        Runs Django 4.2.16 with Gunicorn WSGI workers on Python 3.12-slim. Implements REST APIs, JWT authentication, soft-deletes, role-based access control, attendance rules, and automated payslip PDF generation.
+      </p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-blue">PostgreSQL 16</span> (app-db-1)</h3>
+      <p>
+        Production database using PostgreSQL 16 Alpine. Data is persisted outside the container in Docker volume <span class="code-pill">app_postgres_data</span>, guaranteeing zero data loss across container rebuilds or reboots.
+      </p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-blue">Persistent Volumes</span></h3>
+      <p>
+        • <span class="code-pill">app_postgres_data</span>: Relational database records.<br>
+        • <span class="code-pill">app_media_data</span>: Uploaded documents & payslip PDFs.<br>
+        • <span class="code-pill">app_caddy_data</span>: SSL certificates & OCSP state.<br>
+        • <span class="code-pill">app_caddy_config</span>: Caddy dynamic runtime configs.
+      </p>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <h2>6. Strategic Free-Tier Design Choices</h2>
+  <div class="callout">
+    <div class="callout-title">Why are we not using AWS RDS, AWS S3, or AWS Lambda?</div>
+    <div style="color: #1e293b; margin-top: 4px;">
+      Managed AWS services introduce monthly recurring costs (e.g. AWS RDS typically costs $15–$30/mo, S3 incurs request charges, and Route 53 incurs zone maintenance fees). By co-locating the database and reverse proxy in lightweight Docker containers on an encrypted EBS volume, Sahayog HR achieves <strong>100% Free-Tier compliance ($0/mo)</strong> while maintaining production-grade reliability and security.
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <h2>7. Live Access & System Endpoints</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Service Endpoint</th>
+        <th style="width: 45%;">URL / Location</th>
+        <th style="width: 30%;">Access Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="table-highlight">Web HRMS Portal</td>
+        <td><a href="https://34-230-20-223.sslip.io">https://34-230-20-223.sslip.io</a></td>
+        <td>Desktop & Mobile Web Users</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">REST API Base</td>
+        <td><a href="https://34-230-20-223.sslip.io/api/v1/">https://34-230-20-223.sslip.io/api/v1/</a></td>
+        <td>Mobile App & Frontend Client</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">API Health Check</td>
+        <td><a href="https://34-230-20-223.sslip.io/api/v1/health/">https://34-230-20-223.sslip.io/api/v1/health/</a></td>
+        <td>Public Monitoring / Uptime</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Django Admin Console</td>
+        <td><a href="https://34-230-20-223.sslip.io/admin/">https://34-230-20-223.sslip.io/admin/</a></td>
+        <td>Superusers & System Admins</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Android APK Release</td>
+        <td><a href="https://github.com/sankiinikam/sahayog-hr/releases/download/latest/app-debug.apk">app-debug.apk (Direct Download)</a></td>
+        <td>Mobile Employees & Admins</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">SSH Shell Command</td>
+        <td><span class="code-pill">ssh -i deploy/sahayog-hr-key.pem ubuntu@34.230.20.223</span></td>
+        <td>DevOps & Infrastructure Admin</td>
+      </tr>
+      <tr>
+        <td class="table-highlight">Server Code Path</td>
+        <td><span class="code-pill">/home/ubuntu/app</span></td>
+        <td>Production Deployment Dir</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>Sahayog HRMS • Cloud Infrastructure Documentation</div>
+    <div>Confidential • For Internal & Administrative Use Only</div>
+  </div>
+
+</body>
+</html>

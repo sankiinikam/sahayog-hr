@@ -85,9 +85,15 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
         month = self.request.query_params.get("month")  # YYYY-MM
         date_from = self.request.query_params.get("date_from")  # YYYY-MM-DD
         date_to = self.request.query_params.get("date_to")  # YYYY-MM-DD
+        status_param = self.request.query_params.get("status")
+        attendance_date = self.request.query_params.get("attendance_date")
 
         if employee_id:
             queryset = queryset.filter(employee_id=employee_id)
+        if status_param:
+            queryset = queryset.filter(status=status_param.upper())
+        if attendance_date:
+            queryset = queryset.filter(attendance_date=attendance_date)
         if month:
             try:
                 year, mon = month.split("-")
@@ -114,6 +120,9 @@ class AttendanceRecordViewSet(viewsets.ModelViewSet):
             {
                 "id": r.id,
                 "employee_id": r.employee_id,
+                "employee_name": f"{r.employee.first_name} {r.employee.last_name}",
+                "employee_code": r.employee.employee_code,
+                "designation": getattr(r.employee.designation, "title", None) or getattr(r.employee.designation, "name", "") or "Staff Member",
                 "attendance_date": str(r.attendance_date),
                 "status": r.status,
                 "first_in": str(r.first_in) if r.first_in else None,

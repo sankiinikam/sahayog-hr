@@ -263,7 +263,7 @@ export const CompanyProfile: React.FC = () => {
             <span className="card-title">Headquarters Address</span>
           </div>
           <div className="card-body">
-            <div className="info-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr" }}>
+            <div className="info-grid address-info-grid">
               <div className="info-item">
                 <label className="info-label">Street / Office Address</label>
                 <div className="info-value">{company?.address || "Sahayog Business Park, Shivaji Nagar"}</div>
@@ -288,14 +288,14 @@ export const CompanyProfile: React.FC = () => {
       {/* Edit Company Modal */}
       {showEditModal && (
         <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}>
-          <div className="modal-box" style={{ maxWidth: 580 }}>
+          <div className="modal-box modal-box-lg" style={{ maxWidth: 580, width: "100%" }}>
             <div className="modal-header">
               <h3>Edit Company Profile</h3>
               <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
             </div>
             <div className="modal-body">
               {/* Company Logo Setting in Edit Modal */}
-              <div className="form-row" style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div className="form-row" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                 <div style={{ width: 64, height: 64, borderRadius: 8, background: "#fff", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                   {logoUrl ? (
                     <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
@@ -303,10 +303,10 @@ export const CompanyProfile: React.FC = () => {
                     <Building2 size={28} color="#94a3b8" />
                   )}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>Company Logo</div>
                   <div style={{ fontSize: 11.5, color: "#64748b", marginBottom: 8 }}>PNG, JPG or SVG (Max 2MB)</div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <input
                       type="file"
                       ref={fileInputRef}

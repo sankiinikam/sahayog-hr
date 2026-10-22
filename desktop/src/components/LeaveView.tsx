@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Check,
   X,
-  Search
+  Search,
+  UserX
 } from "lucide-react";
 import { getLocalDateString } from "../utils/timeFormat";
 
@@ -32,6 +33,18 @@ interface LeaveRequestItem {
   created_at?: string;
 }
 
+interface AbsentRecordItem {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  employee_code?: string;
+  designation?: string;
+  attendance_date: string;
+  status: "ABSENT";
+  first_in?: string | null;
+  last_out?: string | null;
+}
+
 interface LeaveTypeItem {
   id: number | string;
   name: string;
@@ -51,10 +64,11 @@ interface EmployeeOption {
 
 export const LeaveView: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequestItem[]>([]);
+  const [absentRecords, setAbsentRecords] = useState<AbsentRecordItem[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeItem[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "ABSENT" | "APPROVED" | "REJECTED">("PENDING");
   const [search, setSearch] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
@@ -82,16 +96,23 @@ export const LeaveView: React.FC = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [reqRes, typeRes, empRes] = await Promise.allSettled([
+      const [reqRes, typeRes, empRes, absRes] = await Promise.allSettled([
         apiClient.get("/leave/requests/"),
         apiClient.get("/leave/types/"),
         apiClient.get("/employees/"),
+        apiClient.get("/attendance/records/?status=ABSENT"),
       ]);
 
       if (reqRes.status === "fulfilled") {
         const raw = reqRes.value.data;
         const list = Array.isArray(raw) ? raw : raw?.results ?? [];
         setRequests(list);
+      }
+
+      if (absRes.status === "fulfilled") {
+        const raw = absRes.value.data;
+        const list = Array.isArray(raw) ? raw : raw?.results ?? [];
+        setAbsentRecords(list);
       }
 
       if (typeRes.status === "fulfilled") {
@@ -161,6 +182,20 @@ export const LeaveView: React.FC = () => {
     }
   };
 
+  // Quick Regularize Absent Worker into an Approved Leave
+  const handleRegularizeAbsent = (abs: AbsentRecordItem) => {
+    setFormData({
+      employee_id: String(abs.employee_id),
+      leave_type: leaveTypes[0] ? String(leaveTypes[0].id) : "",
+      start_date: abs.attendance_date,
+      end_date: abs.attendance_date,
+      day_type: "FULL_DAY",
+      reason: `Regularized absence from shift on ${abs.attendance_date}`,
+      auto_approve: true,
+    });
+    setShowModal(true);
+  };
+
   // Submit Admin-Recorded Worker Leave
   const handleRecordWorkerLeave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,9 +244,11 @@ export const LeaveView: React.FC = () => {
   const pendingCount = requests.filter((r) => r.status === "PENDING").length;
   const approvedCount = requests.filter((r) => r.status === "APPROVED").length;
   const rejectedCount = requests.filter((r) => r.status === "REJECTED").length;
+  const absentCount = absentRecords.length;
 
-  // Filtered requests
-  const filtered = requests.filter((r) => {
+  // Filtered requests & absences
+  const filteredRequests = requests.filter((r) => {
+    if (filterStatus === "ABSENT") return false;
     if (filterStatus !== "ALL" && r.status !== filterStatus) return false;
     if (!search) return true;
     const q = search.toLowerCase();
@@ -223,6 +260,20 @@ export const LeaveView: React.FC = () => {
       r.reason?.toLowerCase().includes(q)
     );
   });
+
+  const filteredAbsences = absentRecords.filter((a) => {
+    if (filterStatus !== "ALL" && filterStatus !== "ABSENT") return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      a.employee_name?.toLowerCase().includes(q) ||
+      a.employee_code?.toLowerCase().includes(q) ||
+      a.designation?.toLowerCase().includes(q) ||
+      a.attendance_date?.includes(q)
+    );
+  });
+
+  const totalDisplayed = filteredRequests.length + filteredAbsences.length;
 
   return (
     <div className="directory-container animate-fade-in">
@@ -238,15 +289,20 @@ export const LeaveView: React.FC = () => {
       <div className="directory-top-bar">
         <div className="directory-title-area">
           <div className="directory-title-row">
-            <h2>Worker Leaves & Approvals</h2>
+            <h2>Worker Leaves & Absences</h2>
             {pendingCount > 0 && (
               <span className="directory-count-pill pill-late">
                 {pendingCount} Pending Review
               </span>
             )}
+            {absentCount > 0 && (
+              <span className="directory-count-pill pill-absent-count">
+                {absentCount} Absent Workers
+              </span>
+            )}
           </div>
           <p className="directory-sub">
-            Review staff leave applications, approve factory time-off, and record worker leaves
+            Review worker leave requests, monitor factory absenteeism, and sanction time-off
           </p>
         </div>
 
@@ -254,7 +310,7 @@ export const LeaveView: React.FC = () => {
           <button
             className="icon-btn-refresh"
             onClick={fetchData}
-            title="Refresh Leave Roster"
+            title="Refresh Leave & Absence Roster"
             disabled={loading}
           >
             <RefreshCw size={15} className={loading ? "spin" : ""} />
@@ -282,6 +338,19 @@ export const LeaveView: React.FC = () => {
         </div>
 
         <div
+          className={`metric-card ${filterStatus === "ABSENT" ? "metric-card-selected" : ""}`}
+          onClick={() => setFilterStatus("ABSENT")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="metric-header">
+            <span>MARKED ABSENT</span>
+            <UserX size={16} className="metric-icon-rose" />
+          </div>
+          <div className="metric-value" style={{ color: "#dc2626" }}>{absentCount}</div>
+          <div className="metric-footer">Unexcused Absences</div>
+        </div>
+
+        <div
           className={`metric-card ${filterStatus === "APPROVED" ? "metric-card-selected" : ""}`}
           onClick={() => setFilterStatus("APPROVED")}
           style={{ cursor: "pointer" }}
@@ -291,20 +360,7 @@ export const LeaveView: React.FC = () => {
             <CheckCircle2 size={16} className="metric-icon-emerald" />
           </div>
           <div className="metric-value" style={{ color: "#16a34a" }}>{approvedCount}</div>
-          <div className="metric-footer">Logged & Sanctioned</div>
-        </div>
-
-        <div
-          className={`metric-card ${filterStatus === "REJECTED" ? "metric-card-selected" : ""}`}
-          onClick={() => setFilterStatus("REJECTED")}
-          style={{ cursor: "pointer" }}
-        >
-          <div className="metric-header">
-            <span>REJECTED</span>
-            <XCircle size={16} className="metric-icon-rose" />
-          </div>
-          <div className="metric-value" style={{ color: "#dc2626" }}>{rejectedCount}</div>
-          <div className="metric-footer">Declined Requests</div>
+          <div className="metric-footer">Sanctioned & Active</div>
         </div>
 
         <div
@@ -316,8 +372,8 @@ export const LeaveView: React.FC = () => {
             <span>TOTAL RECORDS</span>
             <Calendar size={16} className="metric-icon-blue" />
           </div>
-          <div className="metric-value">{requests.length}</div>
-          <div className="metric-footer">Full Leave History</div>
+          <div className="metric-value">{requests.length + absentRecords.length}</div>
+          <div className="metric-footer">Leaves & Absences</div>
         </div>
       </div>
 
@@ -325,7 +381,7 @@ export const LeaveView: React.FC = () => {
       <div className="directory-search-wrapper" style={{ marginBottom: 12 }}>
         <Search size={16} className="search-icon" />
         <input
-          placeholder="Search by worker name, employee code, designation, or reason…"
+          placeholder="Search by worker name, employee code, designation, or date…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="directory-search-input"
@@ -346,10 +402,16 @@ export const LeaveView: React.FC = () => {
           <Clock size={13} style={{ marginRight: 4 }} /> Pending Approvals ({pendingCount})
         </button>
         <button
+          className={`filter-chip chip-absent ${filterStatus === "ABSENT" ? "active" : ""}`}
+          onClick={() => setFilterStatus("ABSENT")}
+        >
+          <UserX size={13} style={{ marginRight: 4 }} /> Marked Absent ({absentCount})
+        </button>
+        <button
           className={`filter-chip ${filterStatus === "ALL" ? "active" : ""}`}
           onClick={() => setFilterStatus("ALL")}
         >
-          All Requests ({requests.length})
+          All Records ({requests.length + absentRecords.length})
         </button>
         <button
           className={`filter-chip chip-present ${filterStatus === "APPROVED" ? "active" : ""}`}
@@ -365,33 +427,103 @@ export const LeaveView: React.FC = () => {
         </button>
       </div>
 
-      {/* Leave Cards List */}
+      {/* Leave & Absence Cards List */}
       {loading ? (
         <div className="loading-spinner">
           <RefreshCw size={18} className="spin" />
-          <span>Loading leave requests…</span>
+          <span>Loading leave and absence records…</span>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : totalDisplayed === 0 ? (
         <div className="empty-state">
           <Calendar size={48} />
-          <h3>No Leave Requests Found</h3>
+          <h3>No Records Found</h3>
           <p>
             {filterStatus === "PENDING"
-              ? "All staff leave requests have been reviewed and resolved!"
+              ? "All worker leave requests have been reviewed!"
+              : filterStatus === "ABSENT"
+              ? "Great news! No worker absences recorded in attendance."
               : search
-              ? "No leave requests match your search criteria."
+              ? "No records match your search criteria."
               : "No leave records logged yet. Click '+ Record Worker Leave' to log leave for an employee."}
           </p>
         </div>
       ) : (
         <div className="leave-cards-container">
-          {filtered.map((req) => {
+          {/* 1. Marked Absences (from Factory Attendance) */}
+          {filteredAbsences.map((abs) => (
+            <div key={`absent-${abs.id}`} className="leave-card leave-card-absent">
+              <div className="leave-card-header">
+                <div className="leave-card-user">
+                  <div className="leave-avatar leave-avatar-absent">
+                    {abs.employee_name
+                      ? abs.employee_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()
+                      : "??"}
+                  </div>
+                  <div className="leave-user-info">
+                    <strong className="leave-user-name">{abs.employee_name}</strong>
+                    <span className="leave-user-sub">
+                      {abs.employee_code && <span className="code-badge">{abs.employee_code}</span>}
+                      <span>{abs.designation || "Staff Member"}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <span className="status-pill status-pill-absent">
+                  <AlertCircle size={12} />
+                  <span>ABSENT FROM SHIFT</span>
+                </span>
+              </div>
+
+              <div className="leave-card-body">
+                <div className="leave-dates-row">
+                  <div className="leave-meta-item">
+                    <span className="meta-lbl">LOG TYPE</span>
+                    <strong className="meta-val text-danger">Unplanned Absence</strong>
+                  </div>
+                  <div className="leave-meta-item">
+                    <span className="meta-lbl">ABSENCE DATE</span>
+                    <strong className="meta-val">{abs.attendance_date}</strong>
+                  </div>
+                  <div className="leave-meta-item">
+                    <span className="meta-lbl">SHIFT ATTENDANCE</span>
+                    <strong className="meta-val">0h Worked (Logged Absent)</strong>
+                  </div>
+                </div>
+
+                <div className="leave-reason-box reason-absent">
+                  <span className="reason-label">Attendance Record:</span>
+                  <span className="reason-text">
+                    Worker was recorded <strong>ABSENT</strong> on {abs.attendance_date}. You can sanction this as an approved leave or leave it as loss of pay.
+                  </span>
+                </div>
+              </div>
+
+              <div className="leave-card-actions">
+                <button
+                  className="btn-regularize-leave"
+                  onClick={() => handleRegularizeAbsent(abs)}
+                  title="Sanction / Convert this absence into an authorized leave"
+                >
+                  <Plus size={15} />
+                  <span>Regularize / Sanction as Leave</span>
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* 2. Leave Requests */}
+          {filteredRequests.map((req) => {
             const isPending = req.status === "PENDING";
             const isApproved = req.status === "APPROVED";
             const isBusy = actionLoading === req.id;
 
             return (
-              <div key={req.id} className={`leave-card ${isPending ? "leave-card-pending" : ""}`}>
+              <div key={`req-${req.id}`} className={`leave-card ${isPending ? "leave-card-pending" : ""}`}>
                 {/* Header Row: Employee & Status Badge */}
                 <div className="leave-card-header">
                   <div className="leave-card-user">
@@ -618,7 +750,7 @@ export const LeaveView: React.FC = () => {
                 <textarea
                   className="form-input"
                   rows={2}
-                  placeholder="e.g. Emergency medical leave, worker telephoned supervisor, etc."
+                  placeholder="e.g. Worker called in sick, regularized floor absence, etc."
                   value={formData.reason}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 />

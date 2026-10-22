@@ -1036,7 +1036,7 @@ html, body {
 
 .company-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 18px;
 }
 
@@ -1044,6 +1044,10 @@ html, body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px 20px;
+}
+
+.address-info-grid {
+  grid-template-columns: 2fr 1fr 1fr 1fr;
 }
 
 .info-item {
@@ -5721,6 +5725,51 @@ html, body {
   border-color: #ef4444;
 }
 
+/* Absent Leave Card & Badges */
+.leave-card-absent {
+  border-left: 4px solid #dc2626 !important;
+  background: #fffdfd !important;
+}
+.leave-avatar-absent {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+}
+.status-pill-absent {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+}
+.pill-absent-count {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+}
+.btn-regularize-leave {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 38px;
+  transition: all 0.15s ease;
+}
+.btn-regularize-leave:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #15803d;
+}
+.reason-absent {
+  border-left-color: #f87171 !important;
+  background: #fff5f5 !important;
+}
+
 /* ----------------------------------------------------------------
    COMPREHENSIVE MOBILE VIEW RULES (MAX-WIDTH: 860PX)
    Guaranteed Zero Horizontal Overflow & Clean Touch Ergonomics
@@ -6019,6 +6068,99 @@ html, body {
     color: #38bdf8 !important;
     background: rgba(56, 189, 248, 0.12) !important;
     font-weight: 700 !important;
+  }
+
+  /* Factory & Settings (CompanyProfile) Mobile Responsive Styles */
+  .company-profile-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+  .company-header-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 14px !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .company-header-main {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .company-logo-box {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    flex-shrink: 0 !important;
+  }
+  .company-logo-img, .company-logo-placeholder {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .company-title-info {
+    min-width: 0 !important;
+    flex: 1 !important;
+    gap: 4px !important;
+  }
+  .company-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    word-break: break-word !important;
+    line-height: 1.25 !important;
+  }
+  .company-tags {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+  .company-location-text {
+    font-size: 11px !important;
+    word-break: break-word !important;
+  }
+  .company-header-card .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .company-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .company-grid .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+  }
+  .info-grid, .address-info-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .info-item {
+    width: 100% !important;
+  }
+  .info-value {
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    font-size: 13px !important;
+  }
+  .form-grid-2 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
   }
 }
 
